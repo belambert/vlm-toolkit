@@ -1,0 +1,21 @@
+[project]
+name = "imggen"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Ben Lambert", email = "blambert@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "accelerate>=1.12.0",
+    "diffusers>=0.36.0",
+    "ftfy>=6.3.1",
+    "protobuf>=6.33.2",
+    "sentencepiece>=0.2.1",
+    "transformers>=4.57.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.3,<0.10.0"]
+build-backend = "uv_build"
