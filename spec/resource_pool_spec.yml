@@ -1,0 +1,11 @@
+resourcePools:
+  machineSpec:
+    acceleratorCount: 1
+    # machineType: n1-standard-16
+    # acceleratorType: NVIDIA_TESLA_T4
+    machineType: a2-ultragpu-1g
+    acceleratorType: NVIDIA_A100_80GB
+  replicaCount: 1
+  diskSpec:
+    bootDiskType: pd-ssd
+    bootDiskSizeGb: 1000

@@ -1,0 +1,24 @@
+workerPoolSpecs:
+  machineSpec:
+    acceleratorCount: 1
+    # machineType: n1-standard-8
+    # acceleratorType: NVIDIA_TESLA_T4
+    machineType: a2-ultragpu-1g
+    acceleratorType: NVIDIA_A100_80GB
+  replicaCount: 1
+  diskSpec:
+    bootDiskType: pd-ssd
+    bootDiskSizeGb: 1000
+  containerSpec:
+    imageUri: us-central1-docker.pkg.dev/llm-exp-405305/finetune/finetune:latest
+    command:
+      - grpo
+    args:
+      - --remote
+    env:
+    - name: HF_DATASETS_CACHE
+      value: /mnt/data/hf/cache
+    - name: WANDB_API_KEY
+      value: 934436ad14ceb55b75a7917bc289ec0ac28246e2
+    - name: HF_TOKEN
+      value: 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
