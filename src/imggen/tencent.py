@@ -9,8 +9,7 @@ print(f"Using device: {device}")
 # Load the model
 print("Loading HunyuanVideo model...")
 pipe = HunyuanVideoPipeline.from_pretrained(
-    "hunyuanvideo-community/HunyuanVideo",
-    torch_dtype=torch.bfloat16
+    "hunyuanvideo-community/HunyuanVideo", torch_dtype=torch.bfloat16
 )
 pipe.to(device)
 
@@ -19,18 +18,20 @@ pipe.enable_model_cpu_offload()
 pipe.vae.enable_tiling()
 
 # Your prompt
-prompt = "A cat wearing sunglasses walking on a beach at sunset, cinematic, high quality"
+prompt = (
+    "A cat wearing sunglasses walking on a beach at sunset, cinematic, high quality"
+)
 
 print(f"Generating video for: {prompt}")
 
 # Generate video
 output = pipe(
     prompt=prompt,
-    num_frames=49,      # Number of frames to generate
-    height=544,         # Video height
-    width=960,          # Video width  
+    num_frames=49,  # Number of frames to generate
+    height=544,  # Video height
+    width=960,  # Video width
     num_inference_steps=30,  # More steps = better quality but slower
-    guidance_scale=7.5  # How closely to follow the prompt
+    guidance_scale=7.5,  # How closely to follow the prompt
 )
 
 # Get the frames

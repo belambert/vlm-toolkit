@@ -4,13 +4,12 @@ set -e
 # Configuration - update these for your project
 PROJECT_ID="${GCP_PROJECT_ID:-llm-exp-405305}"
 # Use multi-regional location for availability across regions
-# Options: us, europe, asia, or specific regions like us-central1
 REGION="${GCP_REGION:-us}"
-IMAGE_NAME="finetune"
+IMAGE_NAME="imggen"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 # Full image URI for Artifact Registry
-IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/finetune/${IMAGE_NAME}:${IMAGE_TAG}"
+IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/imggen/${IMAGE_NAME}:${IMAGE_TAG}"
 
 echo "Building Docker image..."
 docker build --platform linux/amd64 -t "${IMAGE_NAME}:${IMAGE_TAG}" .

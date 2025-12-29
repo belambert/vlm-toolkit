@@ -1,27 +1,37 @@
-import torch
 import numpy as np
+import torch
 from diffusers import AutoModel, WanPipeline
-from diffusers.quantizers import PipelineQuantizationConfig
 from diffusers.hooks.group_offloading import apply_group_offloading
+from diffusers.quantizers import PipelineQuantizationConfig
 from diffusers.utils import export_to_video, load_image
 from transformers import UMT5EncoderModel
-
 
 # this?
 # https://huggingface.co/docs/diffusers/api/pipelines/wan?T2V+usage=T2V+memory
 
-text_encoder = UMT5EncoderModel.from_pretrained("Wan-AI/Wan2.1-T2V-14B-Diffusers", subfolder="text_encoder", torch_dtype=torch.bfloat16)
-vae = AutoModel.from_pretrained("Wan-AI/Wan2.1-T2V-14B-Diffusers", subfolder="vae", torch_dtype=torch.float32)
-transformer = AutoModel.from_pretrained("Wan-AI/Wan2.1-T2V-14B-Diffusers", subfolder="transformer", torch_dtype=torch.bfloat16)
+text_encoder = UMT5EncoderModel.from_pretrained(
+    "Wan-AI/Wan2.1-T2V-14B-Diffusers",
+    subfolder="text_encoder",
+    torch_dtype=torch.bfloat16,
+)
+vae = AutoModel.from_pretrained(
+    "Wan-AI/Wan2.1-T2V-14B-Diffusers", subfolder="vae", torch_dtype=torch.float32
+)
+transformer = AutoModel.from_pretrained(
+    "Wan-AI/Wan2.1-T2V-14B-Diffusers",
+    subfolder="transformer",
+    torch_dtype=torch.bfloat16,
+)
 
 # group-offloading
 onload_device = torch.device("mps")
 offload_device = torch.device("cpu")
-apply_group_offloading(text_encoder,
+apply_group_offloading(
+    text_encoder,
     onload_device=onload_device,
     offload_device=offload_device,
     offload_type="block_level",
-    num_blocks_per_group=4
+    num_blocks_per_group=4,
 )
 transformer.enable_group_offload(
     onload_device=onload_device,
@@ -35,7 +45,7 @@ pipeline = WanPipeline.from_pretrained(
     vae=vae,
     transformer=transformer,
     text_encoder=text_encoder,
-    torch_dtype=torch.bfloat16
+    torch_dtype=torch.bfloat16,
 )
 pipeline.to("mps")
 

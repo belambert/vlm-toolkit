@@ -1,11 +1,10 @@
+import numpy as np
 import torch
 from diffusers import FlowMatchEulerDiscreteScheduler
-from transformers import CLIPTextModel, CLIPTokenizer, T5EncoderModel, T5TokenizerFast
 from diffusers.models import AutoencoderKL
 from diffusers.models.transformers import FluxTransformer2DModel
-import numpy as np
 from PIL import Image
-
+from transformers import CLIPTextModel, CLIPTokenizer, T5EncoderModel, T5TokenizerFast
 
 # Generation parameters
 MODEL = "black-forest-labs/FLUX.1-dev"
@@ -67,13 +66,17 @@ def main():
     # 1. Load CLIP text encoder (for prompt embeddings)
     print("Loading CLIP...")
     clip_tok = CLIPTokenizer.from_pretrained(MODEL, subfolder="tokenizer")
-    clip_enc = CLIPTextModel.from_pretrained(MODEL, subfolder="text_encoder", dtype=dtype)
+    clip_enc = CLIPTextModel.from_pretrained(
+        MODEL, subfolder="text_encoder", dtype=dtype
+    )
     clip_enc = clip_enc.to(device)
 
     # 2. Load T5 text encoder (for additional conditioning)
     print("Loading T5...")
     t5_tok = T5TokenizerFast.from_pretrained(MODEL, subfolder="tokenizer_2")
-    t5_enc = T5EncoderModel.from_pretrained(MODEL, subfolder="text_encoder_2", dtype=dtype)
+    t5_enc = T5EncoderModel.from_pretrained(
+        MODEL, subfolder="text_encoder_2", dtype=dtype
+    )
     t5_enc = t5_enc.to(device)
 
     # 3. Load FLUX transformer (the main diffusion model)
@@ -204,11 +207,11 @@ def main():
     imgs = [latents_to_img(vae, latent) for latent in intermediate_latents]
 
     imgs[0].save(
-       'animation.gif',
+        "animation.gif",
         save_all=True,
         append_images=imgs[1:],
         duration=200,  # milliseconds per frame
-        loop=3  # 0 means loop forever
+        loop=3,  # 0 means loop forever
     )
 
     pil_image = latents_to_img(vae, latents)
@@ -216,11 +219,13 @@ def main():
     pil_image.save("flux_output.png")
     print("Image saved as flux_output.png")
 
+
 def latents_to_img(vae, latents: torch.Tensor):
     latents = latents / vae.config.scaling_factor
     with torch.no_grad():
         image = vae.decode(latents, return_dict=False)[0]
     return tensor_to_img(image)
+
 
 def tensor_to_img(image: torch.Tensor):
     image = (image / 2 + 0.5).clamp(0, 1)
@@ -228,7 +233,6 @@ def tensor_to_img(image: torch.Tensor):
     image = (image * 255).round().astype("uint8")
     pil_image = Image.fromarray(image[0])
     return pil_image
-
 
 
 if __name__ == "__main__":

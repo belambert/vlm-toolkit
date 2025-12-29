@@ -6,8 +6,8 @@ from typing import Optional
 
 import torch
 import typer
-from diffusers import (  # StableDiffusionXLPipeline,
-    DiffusionPipeline,
+from diffusers import (
+    DiffusionPipeline,  # StableDiffusionXLPipeline,
     DPMSolverMultistepScheduler,
 )
 from typing_extensions import Annotated
