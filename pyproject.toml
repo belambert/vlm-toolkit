@@ -16,6 +16,7 @@ dependencies = [
     "peft>=0.18.0",
     "pillow>=12.0.0",
     "protobuf>=6.33.2",
+    "pydantic>=2.12.5",
     "qwen-vl-utils>=0.0.14",
     "sentencepiece>=0.2.1",
     "torchvision>=0.24.1",

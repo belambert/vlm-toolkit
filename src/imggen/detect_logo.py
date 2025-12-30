@@ -7,28 +7,26 @@ from PIL import Image
 from qwen_vl_utils import process_vision_info
 from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 
+from imggen.util import get_device
+
 app = typer.Typer()
 
-
-def load_model(model_name: str, device: str):
-    """Load Qwen2-VL model and processor."""
-    model = Qwen2VLForConditionalGeneration.from_pretrained(
-        model_name,
-        torch_dtype=torch.bfloat16 if device != "cpu" else torch.float32,
-        device_map="auto",
-    )
-    processor = AutoProcessor.from_pretrained(model_name)
-    return model, processor
+EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
 
 
-def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
-    """Detect watermark in an image using Qwen2-VL."""
-    # Load and resize image if needed
-    image = Image.open(image_path)
+def find_images(folder: Path) -> list[Path]:
+    """Find all images in a folder based on EXTENSIONS."""
+    image_files = []
+    for ext in EXTENSIONS:
+        image_files.extend(folder.glob(f"*.{ext}"))
+    typer.echo(f"Found {len(image_files)} images to check")
+    return image_files
+
+
+def resize_image_if_needed(image: Image.Image, max_size: int = 1024) -> Image.Image:
+    """Resize image if larger than max_size, maintaining aspect ratio."""
     width, height = image.size
 
-    # Scale down if larger than 1024x1024
-    max_size = 1024
     if width > max_size or height > max_size:
         # Calculate new size maintaining aspect ratio
         if width > height:
@@ -38,25 +36,49 @@ def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
             new_height = max_size
             new_width = int(width * (max_size / height))
 
-        image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        return image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-    prompt = """Look at this image carefully. Does it contain any watermarks, logos, text overlays, or copyright marks?
+    return image
 
-If yes, describe:
-1. What the watermark says or looks like
-2. Where it is located (e.g., top-left corner, bottom-right, center, etc.)
-3. How prominent/visible it is
 
-If no watermark is present, just say "No watermark detected."
+PROMPT = """Look at this image carefully. Does it contain any watermarks, logos, text overlays, or copyright marks?
 
-Be specific about the location using terms like: top-left, top-center, top-right, middle-left, center, middle-right, bottom-left, bottom-center, bottom-right."""
+If yes, output only the location:
+ - top-left
+ - top-right
+ - bottom-left
+ - bottom-right
+
+If no watermark is present, just respond with "none"
+"""
+
+
+def load_model(model_name: str, device: str):
+    """Load Qwen2-VL model and processor."""
+    model = Qwen2VLForConditionalGeneration.from_pretrained(
+        model_name,
+        dtype=torch.bfloat16 if device != "cpu" else torch.float32,
+        device_map="auto",
+    )
+    processor = AutoProcessor.from_pretrained(model_name)
+    return model, processor
+
+
+def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
+    """Detect watermark in an image using Qwen2-VL."""
+    # Load image and get original size
+    image = Image.open(image_path)
+    width, height = image.size
+
+    # Resize if needed
+    image = resize_image_if_needed(image)
 
     messages = [
         {
             "role": "user",
             "content": [
                 {"type": "image", "image": image},
-                {"type": "text", "text": prompt},
+                {"type": "text", "text": PROMPT},
             ],
         }
     ]
@@ -97,53 +119,13 @@ Be specific about the location using terms like: top-left, top-center, top-right
 @app.command()
 def main(
     folder: Path = typer.Argument(..., help="Folder containing images to check"),
-    output: Path = typer.Option(
-        None,
-        help="Output JSON file (default: watermark_detections.json in input folder)",
-    ),
-    extensions: str = typer.Option(
-        "jpg,jpeg,png,webp", help="Comma-separated list of image extensions to process"
-    ),
-    model_name: str = typer.Option(
-        "Qwen/Qwen2-VL-7B-Instruct", help="Hugging Face model name"
-    ),
+    output: Path = typer.Option(None, help="Output JSON file"),
+    model_name: str = typer.Option("Qwen/Qwen2-VL-7B-Instruct", help="HF model"),
 ):
-    """Detect watermarks in images using Qwen2-VL."""
-
-    if not folder.exists() or not folder.is_dir():
-        typer.echo(f"Error: {folder} is not a valid directory")
-        raise typer.Exit(1)
-
-    # Parse extensions
-    ext_list = [f".{ext.strip().lower().lstrip('.')}" for ext in extensions.split(",")]
-
-    # Find all images
-    image_files = []
-    for ext in ext_list:
-        image_files.extend(folder.glob(f"*{ext}"))
-
-    if not image_files:
-        typer.echo(f"No images found in {folder} with extensions: {ext_list}")
-        raise typer.Exit(1)
-
-    typer.echo(f"Found {len(image_files)} images to check")
-
-    # Determine device
-    if torch.cuda.is_available():
-        device = "cuda"
-    elif torch.backends.mps.is_available():
-        device = "mps"
-    else:
-        device = "cpu"
-
-    typer.echo(f"Using device: {device}")
-    typer.echo(f"Loading model: {model_name}...")
-
-    # Load model
+    """Detect logos with a VLM."""
+    image_files = find_images(folder)
+    device = get_device()
     model, processor = load_model(model_name, device)
-
-    typer.echo("Model loaded successfully\n")
-
     results = []
 
     for image_path in image_files:
@@ -152,10 +134,7 @@ def main(
             result = detect_watermark(model, processor, image_path, device)
             results.append(result)
 
-            # Show brief result
-            print(result)
-            detection = result["detection"]
-            if "no watermark" in detection.lower():
+            if "none" in result["detection"].lower():
                 typer.echo(" ✓ No watermark")
             else:
                 typer.echo(" ⚠ Watermark detected")
@@ -164,7 +143,6 @@ def main(
             typer.echo(f" ✗ Error: {e}")
             continue
 
-    # Save results to JSON
     if output is None:
         output = folder / "watermark_detections.json"
 
