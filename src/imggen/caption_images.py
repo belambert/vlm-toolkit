@@ -1,58 +1,95 @@
-import base64
 import json
 from pathlib import Path
 
-import anthropic
+import torch
 import typer
+from PIL import Image
+from qwen_vl_utils import process_vision_info
+from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 
 app = typer.Typer()
 
 
-def encode_image(image_path: Path) -> tuple[str, str]:
-    """Encode image to base64 and determine media type."""
-    with open(image_path, "rb") as f:
-        image_data = base64.standard_b64encode(f.read()).decode("utf-8")
-
-    # Determine media type from extension
-    extension = image_path.suffix.lower()
-    media_type_map = {
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".png": "image/png",
-        ".gif": "image/gif",
-        ".webp": "image/webp",
-    }
-    media_type = media_type_map.get(extension, "image/jpeg")
-
-    return image_data, media_type
-
-
-def caption_image(client: anthropic.Anthropic, image_path: Path, prompt: str) -> str:
-    """Generate a caption for a single image using Claude."""
-    image_data, media_type = encode_image(image_path)
-
-    message = client.messages.create(
-        model="claude-3-5-sonnet-latest",
-        max_tokens=1024,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": image_data,
-                        },
-                    },
-                    {"type": "text", "text": prompt},
-                ],
-            }
-        ],
+def load_model(model_name: str, device: str):
+    """Load Qwen2-VL model and processor."""
+    model = Qwen2VLForConditionalGeneration.from_pretrained(
+        model_name,
+        torch_dtype=torch.bfloat16 if device != "cpu" else torch.float32,
+        device_map="auto",
     )
+    processor = AutoProcessor.from_pretrained(model_name)
+    return model, processor
 
-    return message.content[0].text
+
+def caption_image(model, processor, image_path: Path, prompt: str, device: str) -> str:
+    """Generate a caption for a single image using Qwen2-VL."""
+    # Load and resize image if needed
+    image = Image.open(image_path)
+    width, height = image.size
+
+    # Scale down if larger than 1024x1024
+    max_size = 1024
+    if width > max_size or height > max_size:
+        # Calculate new size maintaining aspect ratio
+        if width > height:
+            new_width = max_size
+            new_height = int(height * (max_size / width))
+        else:
+            new_height = max_size
+            new_width = int(width * (max_size / height))
+
+        image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": image},
+                {"type": "text", "text": prompt},
+            ],
+        }
+    ]
+
+    # Prepare inputs
+    text = processor.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    image_inputs, video_inputs = process_vision_info(messages)
+    inputs = processor(
+        text=[text],
+        images=image_inputs,
+        videos=video_inputs,
+        padding=True,
+        return_tensors="pt",
+    )
+    inputs = inputs.to(device)
+
+    # Generate caption
+    generated_ids = model.generate(**inputs, max_new_tokens=512, repetition_penalty=1.2)
+    generated_ids_trimmed = [
+        out_ids[len(in_ids) :]
+        for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    caption = processor.batch_decode(
+        generated_ids_trimmed,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False,
+    )[0]
+
+    return caption
+
+
+DEFAULT_PROMPT = """
+Write a detailed, but brief caption for this image. Focus on the appearance and
+positions of the people in the picture, as well as their general setting (e.g. in
+a park, in a kitchen).  Refer to women in the picture as girls
+and men as guys. Describe any sexual acts using common slang terms like
+doggy, cowgirl, missionary, blowjob, creampie, cum etc. Describe the state of dress of
+any people in the image (e.g. topless, naked, clothed). Describe any clothing briefly
+e.g. pink bra, tight jeans. It's not necessary to describe background props, like
+paintings or light fixtures. Include brief descriptions of each persons appearance, e.g
+a tall, thin girl, or a girl with short brown hair.
+"""
 
 
 @app.command()
@@ -62,15 +99,17 @@ def main(
         "txt", help="Output format: 'txt' (one file per image) or 'json' (single file)"
     ),
     prompt: str = typer.Option(
-        "Describe this image in detail. Be specific and descriptive.",
+        DEFAULT_PROMPT,
         help="Prompt to use for captioning",
     ),
     extensions: str = typer.Option(
-        "jpg,jpeg,png,webp,gif",
-        help="Comma-separated list of image extensions to process",
+        "jpg,jpeg,png,webp", help="Comma-separated list of image extensions to process"
+    ),
+    model_name: str = typer.Option(
+        "Qwen/Qwen2-VL-2B-Instruct", help="Hugging Face model name"
     ),
 ):
-    """Generate captions for all images in a folder using Claude."""
+    """Generate captions for all images in a folder using Qwen2-VL."""
 
     if not folder.exists() or not folder.is_dir():
         typer.echo(f"Error: {folder} is not a valid directory")
@@ -90,15 +129,28 @@ def main(
 
     typer.echo(f"Found {len(image_files)} images to caption")
 
-    # Initialize Anthropic client
-    client = anthropic.Anthropic()
+    # Determine device
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+
+    typer.echo(f"Using device: {device}")
+    typer.echo(f"Loading model: {model_name}...")
+
+    # Load model
+    model, processor = load_model(model_name, device)
+
+    typer.echo("Model loaded successfully\n")
 
     results = {}
 
     for image_path in image_files:
         typer.echo(f"Processing: {image_path.name}...", nl=False)
         try:
-            caption = caption_image(client, image_path, prompt)
+            caption = caption_image(model, processor, image_path, prompt, device)
             results[image_path.name] = caption
 
             if output_format == "txt":
