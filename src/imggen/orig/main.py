@@ -6,10 +6,8 @@ from typing import Optional
 
 import torch
 import typer
-from diffusers import (
-    DiffusionPipeline,  # StableDiffusionXLPipeline,
-    DPMSolverMultistepScheduler,
-)
+from diffusers import DiffusionPipeline  # StableDiffusionXLPipeline,
+from diffusers import DPMSolverMultistepScheduler
 from typing_extensions import Annotated
 
 from imggen.util import get_device

@@ -30,5 +30,6 @@ def main(
     image.save(buffer, format="PNG")
     output.write(buffer.getvalue())
 
+
 if __name__ == "__main__":
     app()

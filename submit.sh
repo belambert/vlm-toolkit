@@ -11,7 +11,7 @@ IMAGE_TAG="${IMAGE_TAG:-latest}"
 IMAGE_URI="us-docker.pkg.dev/${PROJECT_ID}/imggen/${IMAGE_NAME}:${IMAGE_TAG}"
 
 # Job configuration
-JOB_NAME="finetune-$(date +%Y%m%d-%H%M%S)"
+JOB_NAME="imggen-$(date +%Y%m%d-%H%M%S)"
 GPU_TYPE="${GPU_TYPE:-NVIDIA_A100_80GB}"
 GPU_COUNT="${GPU_COUNT:-1}"
 BOOT_DISK_SIZE="${BOOT_DISK_SIZE:-1000}"

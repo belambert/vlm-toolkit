@@ -5,17 +5,15 @@ import typer
 from diffusers import AutoPipelineForText2Image
 from peft import PeftConfig, PeftModel
 
-app = typer.Typer()
-
+from imggen.gcs import upload_image_to_gcs
 from imggen.util import get_device
+
+app = typer.Typer()
 
 
 @app.command()
 def main(
     prompt: str = typer.Argument(..., help="The prompt for image generation"),
-    output: typer.FileBinaryWrite = typer.Argument(
-        "output.png", help="Output filename (use '-' for stdout)"
-    ),
 ):
     device = get_device()
     pipe = AutoPipelineForText2Image.from_pretrained(
@@ -30,9 +28,7 @@ def main(
         adapter_name="uncensored",
     )
 
-    prompt = "A woman in a sheer white dress standing on a beach at sunset, backlit so her silhouette is visible through the thin fabric, shot with Canon EOS R5, 85mm f/1.2 lens, golden hour natural lighting, professional composition, hyperrealistic detail, masterpiece quality, 8K resolution."
     negative_prompt = "text, watermark, signature, cartoon, anime, illustration, painting, drawing, low quality, blurry"
-
     seed = 42
     generator = torch.Generator(device=device).manual_seed(seed)
 
@@ -48,7 +44,15 @@ def main(
 
     buffer = BytesIO()
     image.save(buffer, format="PNG")
-    output.write(buffer.getvalue())
+
+    # Upload to GCS
+    result = upload_image_to_gcs(buffer, bucket_name="imggen", prefix="new")
+
+    print(f"Date folder: {result['date_folder']}")
+    print(f"Filename: {result['filename']}")
+    print(f"File uploaded to GCS: {result['public_url']}")
+    print(f"Blob path: {result['blob_path']}")
+
 
 if __name__ == "__main__":
     app()
