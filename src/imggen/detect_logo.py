@@ -13,34 +13,6 @@ app = typer.Typer()
 
 EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
 
-
-def find_images(folder: Path) -> list[Path]:
-    """Find all images in a folder based on EXTENSIONS."""
-    image_files = []
-    for ext in EXTENSIONS:
-        image_files.extend(folder.glob(f"*.{ext}"))
-    typer.echo(f"Found {len(image_files)} images to check")
-    return image_files
-
-
-def resize_image_if_needed(image: Image.Image, max_size: int = 1024) -> Image.Image:
-    """Resize image if larger than max_size, maintaining aspect ratio."""
-    width, height = image.size
-
-    if width > max_size or height > max_size:
-        # Calculate new size maintaining aspect ratio
-        if width > height:
-            new_width = max_size
-            new_height = int(height * (max_size / width))
-        else:
-            new_height = max_size
-            new_width = int(width * (max_size / height))
-
-        return image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
-    return image
-
-
 PROMPT = """Look at this image carefully. Does it contain any watermarks, logos, text overlays, or copyright marks?
 
 If yes, output only the location:
@@ -51,17 +23,6 @@ If yes, output only the location:
 
 If no watermark is present, just respond with "none"
 """
-
-
-def load_model(model_name: str, device: str):
-    """Load Qwen2-VL model and processor."""
-    model = Qwen2VLForConditionalGeneration.from_pretrained(
-        model_name,
-        dtype=torch.bfloat16 if device != "cpu" else torch.float32,
-        device_map="auto",
-    )
-    processor = AutoProcessor.from_pretrained(model_name)
-    return model, processor
 
 
 def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
@@ -98,7 +59,7 @@ def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
     inputs = inputs.to(device)
 
     # Generate detection
-    generated_ids = model.generate(**inputs, max_new_tokens=512, repetition_penalty=1.2)
+    generated_ids = model.generate(**inputs, max_new_tokens=512)
     generated_ids_trimmed = [
         out_ids[len(in_ids) :]
         for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
@@ -151,6 +112,44 @@ def main(
 
     typer.echo(f"\nResults saved to: {output}")
     typer.echo(f"Processed: {len(results)}/{len(image_files)} images")
+
+
+def find_images(folder: Path) -> list[Path]:
+    """Find all images in a folder based on EXTENSIONS."""
+    image_files = []
+    for ext in EXTENSIONS:
+        image_files.extend(folder.glob(f"*.{ext}"))
+    typer.echo(f"Found {len(image_files)} images to check")
+    return image_files
+
+
+def resize_image_if_needed(image: Image.Image, max_size: int = 1024) -> Image.Image:
+    """Resize image if larger than max_size, maintaining aspect ratio."""
+    width, height = image.size
+
+    if width > max_size or height > max_size:
+        # Calculate new size maintaining aspect ratio
+        if width > height:
+            new_width = max_size
+            new_height = int(height * (max_size / width))
+        else:
+            new_height = max_size
+            new_width = int(width * (max_size / height))
+
+        return image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+    return image
+
+
+def load_model(model_name: str, device: str):
+    """Load Qwen2-VL model and processor."""
+    model = Qwen2VLForConditionalGeneration.from_pretrained(
+        model_name,
+        dtype=torch.bfloat16 if device != "cpu" else torch.float32,
+        device_map="auto",
+    )
+    processor = AutoProcessor.from_pretrained(model_name)
+    return model, processor
 
 
 if __name__ == "__main__":
