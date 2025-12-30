@@ -15,12 +15,12 @@ from imggen.util import get_device
 @app.command()
 def main(
     prompt: str = typer.Argument(..., help="The prompt for image generation"),
+    model: str = typer.Option("black-forest-labs/FLUX.2-dev", help="Model to use for image generation"),
     num_inference_steps: int = typer.Option(25, help="Number of denoising steps"),
 ):
 
     pipe = DiffusionPipeline.from_pretrained(
-        "black-forest-labs/FLUX.1-dev",
-        # "Tongyi-MAI/Z-Image-Turbo",
+        model,
         torch_dtype=torch.bfloat16,
     )
     pipe.to(get_device())
