@@ -9,6 +9,30 @@ from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 
 app = typer.Typer()
 
+DEFAULT_PROMPT = """
+Write a detailed, but brief caption for this image. Focus on the appearance and
+positions of the people in the picture, as well as their general setting (e.g. in
+a park, in a kitchen).  Refer to women in the picture as girls
+and men as guys. Describe any sexual acts using common slang terms like
+doggy, cowgirl, missionary, blowjob, creampie, cum etc. Describe the state of dress of
+any people in the image (e.g. topless, naked, clothed). Describe any clothing briefly
+e.g. pink bra, tight jeans. It's not necessary to describe background props, like
+paintings or light fixtures. Include brief descriptions of each persons appearance, e.g
+a tall, thin girl, or a girl with short brown hair.
+
+The caption should read like it's the instructions from a user to an image generation
+model.  Here are some good example captions:
+
+Example: brunette girl with small boobs riding reverse cowgirl on a bed. Her mouth is
+open and there's cum everywhere
+
+Example: brunette with long brown hair sitting on a blanket in a park with her knees up.
+She has one boob out and no pants on. She's gently spreading her pussy for the camera to
+see
+
+Example: hot naked girl with straight brown hair squatting and blowing a guy wearing only a tanktop. She's touching
+her pussy. they are in an art studio.
+"""
 
 def load_model(model_name: str, device: str):
     """Load Qwen2-VL model and processor."""
@@ -79,19 +103,6 @@ def caption_image(model, processor, image_path: Path, prompt: str, device: str) 
     return caption
 
 
-DEFAULT_PROMPT = """
-Write a detailed, but brief caption for this image. Focus on the appearance and
-positions of the people in the picture, as well as their general setting (e.g. in
-a park, in a kitchen).  Refer to women in the picture as girls
-and men as guys. Describe any sexual acts using common slang terms like
-doggy, cowgirl, missionary, blowjob, creampie, cum etc. Describe the state of dress of
-any people in the image (e.g. topless, naked, clothed). Describe any clothing briefly
-e.g. pink bra, tight jeans. It's not necessary to describe background props, like
-paintings or light fixtures. Include brief descriptions of each persons appearance, e.g
-a tall, thin girl, or a girl with short brown hair.
-"""
-
-
 @app.command()
 def main(
     folder: Path = typer.Argument(..., help="Folder containing images to caption"),
@@ -106,7 +117,7 @@ def main(
         "jpg,jpeg,png,webp", help="Comma-separated list of image extensions to process"
     ),
     model_name: str = typer.Option(
-        "Qwen/Qwen2-VL-2B-Instruct", help="Hugging Face model name"
+        "Qwen/Qwen2-VL-7B-Instruct", help="Hugging Face model name"
     ),
 ):
     """Generate captions for all images in a folder using Qwen2-VL."""

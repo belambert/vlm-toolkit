@@ -49,7 +49,15 @@ def remove_watermark(
     """Remove watermark from an image using inpainting."""
     # Load image
     image = Image.open(image_path).convert("RGB")
-    width, height = image.size
+    orig_width, orig_height = image.size
+
+    # Ensure dimensions are divisible by 8
+    width = (orig_width // 8) * 8
+    height = (orig_height // 8) * 8
+
+    # Resize if needed
+    if width != orig_width or height != orig_height:
+        image = image.resize((width, height), Image.Resampling.LANCZOS)
 
     # Create mask
     mask = create_mask_for_location(width, height, location)
@@ -121,7 +129,7 @@ def main(
 
     pipe = AutoPipelineForInpainting.from_pretrained(
         model_name,
-        torch_dtype=torch.float16 if device != "cpu" else torch.float32,
+        dtype=torch.float16 if device != "cpu" else torch.float32,
     )
     pipe.to(device)
 
