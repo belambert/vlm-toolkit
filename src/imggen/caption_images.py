@@ -116,6 +116,9 @@ def main(
     extensions: str = typer.Option(
         "jpg,jpeg,png,webp", help="Comma-separated list of image extensions to process"
     ),
+
+    # Qwen3-VL 8b and ~32b are also available
+    # also Qwen2.5 VL
     model_name: str = typer.Option(
         "Qwen/Qwen2-VL-7B-Instruct", help="Hugging Face model name"
     ),
