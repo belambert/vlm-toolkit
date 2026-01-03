@@ -3,12 +3,10 @@ set -e
 
 # Configuration - update these for your project
 PROJECT_ID="${GCP_PROJECT_ID:-llm-exp-405305}"
-# Use multi-regional location for availability across regions
 REGION="${GCP_REGION:-us}"
 IMAGE_NAME="imggen"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
-# Full image URI for Artifact Registry
 IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/imggen/${IMAGE_NAME}:${IMAGE_TAG}"
 
 echo "Building Docker image..."

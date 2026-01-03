@@ -1,9 +1,8 @@
 #!/bin/bash
 set -e
 
-# Configuration - update these for your project
 PROJECT_ID="${GCP_PROJECT_ID:-llm-exp-405305}"
-REGION="${GCP_REGION:-us-central1}"  # multi-regional for availability across regions
+REGION="${GCP_REGION:-us-central1}"
 IMAGE_NAME="imggen"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
@@ -14,7 +13,7 @@ IMAGE_URI="us-docker.pkg.dev/${PROJECT_ID}/imggen/${IMAGE_NAME}:${IMAGE_TAG}"
 JOB_NAME="imggen-$(date +%Y%m%d-%H%M%S)"
 GPU_TYPE="${GPU_TYPE:-}"  # Default: no GPU
 GPU_COUNT="${GPU_COUNT:-1}"
-BOOT_DISK_SIZE="${BOOT_DISK_SIZE:-100}"  # Smaller default disk for CPU-only
+BOOT_DISK_SIZE="${BOOT_DISK_SIZE:-100}"
 
 # Determine machine type based on GPU type and count
 case "${GPU_TYPE}" in
@@ -85,9 +84,6 @@ if [ -z "${HF_TOKEN}" ]; then
     echo "Warning: HF_TOKEN not set. Set it with: export HF_TOKEN=your-token"
 fi
 
-# Get all command arguments
-# Usage: ./submit.sh ./bin/check-inference.sh
-# Usage: ./submit.sh uv run grpo --lr 1e-4
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <command...>"
     echo "Example: $0 ./bin/check-inference.sh"
@@ -102,11 +98,7 @@ echo "  Job name: ${JOB_NAME}"
 echo "  Image: ${IMAGE_URI}"
 echo "  Command: $@"
 echo "  Machine: ${MACHINE_TYPE}"
-if [ -n "${GPU_TYPE}" ]; then
-    echo "  GPU: ${GPU_COUNT}x ${GPU_TYPE}"
-else
-    echo "  GPU: None (CPU-only)"
-fi
+echo "  GPU: ${GPU_COUNT}x ${GPU_TYPE}"
 echo "  Disk: ${BOOT_DISK_SIZE}GB SSD"
 if [ -n "${BUCKET}" ]; then
     echo "  GCS Bucket: ${BUCKET} (mounted at /mnt/disks/gcs)"
