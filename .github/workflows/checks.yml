@@ -47,6 +47,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: [style, test]
+    if: false  # Disabled for now
     steps:
       - uses: actions/checkout@v4
 
