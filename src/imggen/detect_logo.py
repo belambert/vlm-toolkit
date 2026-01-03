@@ -91,11 +91,78 @@ def detect_logo(model, processor, image_path: Path, device: str) -> dict:
     return {"image_path": str(image_path), "detection": response}
 
 
+def detect_logo_batch(model, processor, image_paths: list[Path], device: str) -> list[dict]:
+    """Detect watermarks in a batch of images."""
+    # Load and prepare all images
+    all_messages = []
+    for image_path in image_paths:
+        image = Image.open(image_path)
+        image = resize_image_if_needed(image)
+
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": image},
+                    {"type": "text", "text": PROMPT},
+                ],
+            }
+        ]
+        all_messages.append(messages)
+
+    # Prepare batch inputs
+    texts = []
+    all_image_inputs = []
+    all_video_inputs = []
+
+    for messages in all_messages:
+        text = processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        texts.append(text)
+
+        image_inputs, video_inputs = process_vision_info(messages)
+        if image_inputs is not None:
+            all_image_inputs.extend(image_inputs)
+        if video_inputs is not None:
+            all_video_inputs.extend(video_inputs)
+
+    # Process batch
+    inputs = processor(
+        text=texts,
+        images=all_image_inputs if all_image_inputs else None,
+        videos=all_video_inputs if all_video_inputs else None,
+        padding=True,
+        return_tensors="pt",
+    )
+    inputs = inputs.to(device)
+
+    # Generate detections
+    generated_ids = model.generate(**inputs, max_new_tokens=512)
+    generated_ids_trimmed = [
+        out_ids[len(in_ids) :]
+        for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    responses = processor.batch_decode(
+        generated_ids_trimmed,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False,
+    )
+
+    # Create results
+    results = []
+    for image_path, response in zip(image_paths, responses):
+        results.append({"image_path": str(image_path), "detection": response})
+
+    return results
+
+
 @app.command()
 def main(
     folder: Path = typer.Argument(..., help="Folder containing images to check"),
     output: Path = typer.Option(None, help="Output JSON file"),
     model_name: str = typer.Option("Qwen/Qwen3-VL-8B-Instruct", help="HF model"),
+    batch_size: int = typer.Option(1, help="Number of images to process in parallel"),
 ):
     """Detect logos with a VLM."""
     image_files = find_images(folder)
@@ -103,20 +170,18 @@ def main(
     model, processor = load_model(model_name, device)
     results = []
 
-    for image_path in image_files:
-        typer.echo(f"Checking: {image_path.name}...", nl=False)
+    # Process images in batches
+    total_batches = (len(image_files) + batch_size - 1) // batch_size
+    for i in range(0, len(image_files), batch_size):
+        batch = image_files[i:i + batch_size]
+        batch_num = i // batch_size + 1
+        typer.echo(f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...")
+
         try:
-            result = detect_logo(model, processor, image_path, device)
-            results.append(result)
-
-            if "none" in result["detection"].lower():
-                typer.echo(" ✓ No logo")
-            else:
-                typer.echo(" ⚠ Logo detected")
-
+            batch_results = detect_logo_batch(model, processor, batch, device)
+            results.extend(batch_results)
         except Exception as e:
-            typer.echo(f" ✗ Error: {e}")
-            continue
+            typer.echo(f"  Error processing batch: {e}, skipping...")
 
     if output is None:
         output = folder / "logo_detections.json"
