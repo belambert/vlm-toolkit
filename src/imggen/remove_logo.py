@@ -86,9 +86,7 @@ def main(
     detections_json: Path = typer.Argument(
         ..., help="JSON file from detect_logo.py script"
     ),
-    output_dir: Path = typer.Option(
-        None, help="Output directory for cleaned images"
-    ),
+    output_dir: Path = typer.Option(None, help="Output directory for cleaned images"),
     model_name: str = typer.Option(
         "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
         help="Inpainting model to use",
@@ -112,9 +110,7 @@ def main(
     typer.echo(f"Loaded {len(detections)} detections")
 
     # Filter out images without watermarks
-    images_to_clean = [
-        d for d in detections if "none" not in d["detection"].lower()
-    ]
+    images_to_clean = [d for d in detections if "none" not in d["detection"].lower()]
 
     if not images_to_clean:
         typer.echo("No watermarks to remove!")

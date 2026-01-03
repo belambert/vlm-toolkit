@@ -37,10 +37,6 @@ RUN uv sync --frozen --no-install-project
 
 # Now copy source code
 COPY src/ ./src/
-COPY bin/ ./bin/
-
-# Make bin scripts executable
-RUN chmod +x bin/*.sh
 
 # Install the project
 RUN uv sync --frozen

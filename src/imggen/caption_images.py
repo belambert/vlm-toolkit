@@ -34,6 +34,7 @@ Example: hot naked girl with straight brown hair squatting and blowing a guy wea
 her pussy. they are in an art studio.
 """
 
+
 def load_model(model_name: str, device: str):
     """Load Qwen2-VL model and processor."""
     model = Qwen2VLForConditionalGeneration.from_pretrained(
@@ -116,7 +117,6 @@ def main(
     extensions: str = typer.Option(
         "jpg,jpeg,png,webp", help="Comma-separated list of image extensions to process"
     ),
-
     # Qwen3-VL 8b and ~32b are also available
     # also Qwen2.5 VL
     model_name: str = typer.Option(

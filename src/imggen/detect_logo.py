@@ -5,7 +5,7 @@ import torch
 import typer
 from PIL import Image
 from qwen_vl_utils import process_vision_info
-from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
+from transformers import AutoModelForVision2Seq, AutoProcessor
 
 from imggen.util import get_device
 
@@ -25,7 +25,7 @@ If no watermark is present, just respond with "none"
 """
 
 
-def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
+def detect_logo(model, processor, image_path: Path, device: str) -> dict:
     """Detect watermark in an image using Qwen2-VL."""
     # Load image and get original size
     image = Image.open(image_path)
@@ -44,11 +44,15 @@ def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
         }
     ]
 
+    # LOOK HERE TO UNDERSTAND THE MODEL BETTER
+
     # Prepare inputs
     text = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
+    # print(text)
     image_inputs, video_inputs = process_vision_info(messages)
+    # print(image_inputs)
     inputs = processor(
         text=[text],
         images=image_inputs,
@@ -56,7 +60,21 @@ def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
         padding=True,
         return_tensors="pt",
     )
+    # would potentially do batching and padding here... or before applying the
+    # tokenizer/processor
     inputs = inputs.to(device)
+    # ['input_ids', 'attention_mask', 'pixel_values', 'image_grid_thw']
+    # print(list(inputs.keys()))
+
+    # input_ids
+    # torch.Size([1, 967])
+    # attention_mask
+    # torch.Size([1, 967])
+    # pixel_values
+    # torch.Size([3552, 1176])
+    # image_grid_thw
+    # torch.Size([1, 3])
+    # tensor([[ 1, 48, 74]], device='mps:0')
 
     # Generate detection
     generated_ids = model.generate(**inputs, max_new_tokens=512)
@@ -70,18 +88,14 @@ def detect_watermark(model, processor, image_path: Path, device: str) -> dict:
         clean_up_tokenization_spaces=False,
     )[0]
 
-    return {
-        "image_path": str(image_path),
-        "original_size": {"width": width, "height": height},
-        "detection": response,
-    }
+    return {"image_path": str(image_path), "detection": response}
 
 
 @app.command()
 def main(
     folder: Path = typer.Argument(..., help="Folder containing images to check"),
     output: Path = typer.Option(None, help="Output JSON file"),
-    model_name: str = typer.Option("Qwen/Qwen2-VL-7B-Instruct", help="HF model"),
+    model_name: str = typer.Option("Qwen/Qwen3-VL-8B-Instruct", help="HF model"),
 ):
     """Detect logos with a VLM."""
     image_files = find_images(folder)
@@ -92,20 +106,20 @@ def main(
     for image_path in image_files:
         typer.echo(f"Checking: {image_path.name}...", nl=False)
         try:
-            result = detect_watermark(model, processor, image_path, device)
+            result = detect_logo(model, processor, image_path, device)
             results.append(result)
 
             if "none" in result["detection"].lower():
-                typer.echo(" ✓ No watermark")
+                typer.echo(" ✓ No logo")
             else:
-                typer.echo(" ⚠ Watermark detected")
+                typer.echo(" ⚠ Logo detected")
 
         except Exception as e:
             typer.echo(f" ✗ Error: {e}")
             continue
 
     if output is None:
-        output = folder / "watermark_detections.json"
+        output = folder / "logo_detections.json"
 
     with open(output, "w") as f:
         json.dump(results, f, indent=2)
@@ -142,8 +156,8 @@ def resize_image_if_needed(image: Image.Image, max_size: int = 1024) -> Image.Im
 
 
 def load_model(model_name: str, device: str):
-    """Load Qwen2-VL model and processor."""
-    model = Qwen2VLForConditionalGeneration.from_pretrained(
+    """Load VLM and processor."""
+    model = AutoModelForVision2Seq.from_pretrained(
         model_name,
         dtype=torch.bfloat16 if device != "cpu" else torch.float32,
         device_map="auto",
