@@ -1,4 +1,4 @@
-.PHONY: check format
+.PHONY: check format test
 
 check:
 	@echo "Running style checks..."
@@ -9,3 +9,8 @@ format:
 	@echo "Formatting code..."
 	black src/
 	isort src/
+
+test:
+	@echo "Running tests..."
+	uv sync --extra dev
+	uv run pytest

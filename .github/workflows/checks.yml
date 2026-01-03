@@ -25,3 +25,21 @@ jobs:
 
       - name: Check import sorting with isort
         run: isort --check-only --diff src/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv sync --extra dev
+
+      - name: Run tests
+        run: uv run pytest
