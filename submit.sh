@@ -21,11 +21,9 @@ case "${GPU_TYPE}" in
     "")
         # No GPU - use CPU-only machine
         MACHINE_TYPE="n1-standard-4"
-        ACCELERATOR_TYPE=""
         ACCELERATOR_COUNT="0"
         ;;
-    NVIDIA_TESLA_A100)
-        ACCELERATOR_TYPE="NVIDIA_TESLA_A100"
+    nvidia-tesla-a100)
         case "${GPU_COUNT}" in
             1) MACHINE_TYPE="a2-highgpu-1g" ;;
             2) MACHINE_TYPE="a2-highgpu-2g" ;;
@@ -35,8 +33,7 @@ case "${GPU_TYPE}" in
         esac
         ACCELERATOR_COUNT="${GPU_COUNT}"
         ;;
-    NVIDIA_A100_80GB)
-        ACCELERATOR_TYPE="NVIDIA_A100_80GB"
+    nvidia-a100-80gb)
         case "${GPU_COUNT}" in
             1) MACHINE_TYPE="a2-ultragpu-1g" ;;
             2) MACHINE_TYPE="a2-ultragpu-2g" ;;
@@ -46,8 +43,7 @@ case "${GPU_TYPE}" in
         esac
         ACCELERATOR_COUNT="${GPU_COUNT}"
         ;;
-    NVIDIA_H100_80GB)
-        ACCELERATOR_TYPE="NVIDIA_H100_80GB"
+    nvidia-h100-80gb)
         case "${GPU_COUNT}" in
             1) MACHINE_TYPE="a3-highgpu-1g" ;;
             2) MACHINE_TYPE="a3-highgpu-2g" ;;
@@ -57,8 +53,7 @@ case "${GPU_TYPE}" in
         esac
         ACCELERATOR_COUNT="${GPU_COUNT}"
         ;;
-    NVIDIA_L4)
-        ACCELERATOR_TYPE="NVIDIA_L4"
+    nvidia-l4)
         case "${GPU_COUNT}" in
             1) MACHINE_TYPE="g2-standard-12" ;;
             2) MACHINE_TYPE="g2-standard-24" ;;
@@ -68,8 +63,7 @@ case "${GPU_TYPE}" in
         esac
         ACCELERATOR_COUNT="${GPU_COUNT}"
         ;;
-    NVIDIA_RTX_A6000)
-        ACCELERATOR_TYPE="NVIDIA_RTX_A6000"
+    nvidia-tesla-t4)
         case "${GPU_COUNT}" in
             1|2|4) MACHINE_TYPE="n1-standard-16" ;;
             *) echo "Error: Unsupported GPU count ${GPU_COUNT} for ${GPU_TYPE}. Valid: 1, 2, 4"; exit 1 ;;
@@ -78,7 +72,7 @@ case "${GPU_TYPE}" in
         ;;
     *)
         echo "Error: Unsupported GPU type: ${GPU_TYPE}"
-        echo "Valid types: NVIDIA_TESLA_A100, NVIDIA_A100_80GB, NVIDIA_H100_80GB, NVIDIA_L4, NVIDIA_RTX_A6000, or leave empty for CPU-only"
+        echo "Valid types: nvidia-tesla-a100, nvidia-a100-80gb, nvidia-h100-80gb, nvidia-l4, nvidia-tesla-t4, or leave empty for CPU-only"
         exit 1
         ;;
 esac
@@ -128,94 +122,22 @@ if [ -n "${GPU_TYPE}" ]; then
     # GPU jobs need more resources
     CPU_MILLI="16000"
     MEMORY_MIB="65536"
+    HAS_GPU="true"
 else
     # CPU-only jobs can use smaller resources
     CPU_MILLI="4000"
     MEMORY_MIB="15360"
+    HAS_GPU=""
 fi
-
-# Build config JSON for Google Cloud Batch
-cat > "${CONFIG_FILE}" << 'OUTER_EOF'
-{
-  "taskGroups": [
-    {
-      "taskCount": "1",
-      "parallelism": "1",
-      "taskSpec": {
-        "computeResource": {
-          "cpuMilli": "CPU_MILLI_PLACEHOLDER",
-          "memoryMib": "MEMORY_MIB_PLACEHOLDER",
-          "bootDiskMib": "BOOT_DISK_SIZE_PLACEHOLDER"
-        },
-        "runnables": [
-          {
-            "container": {
-              "imageUri": "IMAGE_URI_PLACEHOLDER",
-              "commands": COMMANDS_PLACEHOLDER,
-              "volumes": []
-OUTER_EOF
 
 # Build container options
 CONTAINER_OPTIONS="--privileged"
 if [ -n "${WANDB_API_KEY}" ]; then
-    CONTAINER_OPTIONS="${CONTAINER_OPTIONS} --env=WANDB_API_KEY=WANDB_API_KEY_PLACEHOLDER"
+    CONTAINER_OPTIONS="${CONTAINER_OPTIONS} --env=WANDB_API_KEY=${WANDB_API_KEY}"
 fi
 if [ -n "${HF_TOKEN}" ]; then
-    CONTAINER_OPTIONS="${CONTAINER_OPTIONS} --env=HF_TOKEN=HF_TOKEN_PLACEHOLDER"
+    CONTAINER_OPTIONS="${CONTAINER_OPTIONS} --env=HF_TOKEN=${HF_TOKEN}"
 fi
-
-cat >> "${CONFIG_FILE}" << 'OUTER_EOF'
-              ,
-              "options": "CONTAINER_OPTIONS_PLACEHOLDER"
-            }
-          }
-        ],
-        "volumes": VOLUMES_PLACEHOLDER
-      }
-    }
-  ],
-  "allocationPolicy": {
-    "instances": [
-      {
-OUTER_EOF
-
-# Add GPU configuration if GPU is specified
-if [ -n "${GPU_TYPE}" ]; then
-    cat >> "${CONFIG_FILE}" << 'OUTER_EOF'
-        "installGpuDrivers": true,
-        "policy": {
-          "machineType": "MACHINE_TYPE_PLACEHOLDER",
-          "accelerators": [
-            {
-              "type": "GPU_TYPE_PLACEHOLDER",
-              "count": GPU_COUNT_PLACEHOLDER
-            }
-          ],
-          "bootDisk": {
-            "image": "batch-debian"
-          }
-        }
-OUTER_EOF
-else
-    cat >> "${CONFIG_FILE}" << 'OUTER_EOF'
-        "policy": {
-          "machineType": "MACHINE_TYPE_PLACEHOLDER",
-          "bootDisk": {
-            "image": "batch-debian"
-          }
-        }
-OUTER_EOF
-fi
-
-cat >> "${CONFIG_FILE}" << 'OUTER_EOF'
-      }
-    ]
-  },
-  "logsPolicy": {
-    "destination": "CLOUD_LOGGING"
-  }
-}
-OUTER_EOF
 
 # Build commands JSON array
 COMMANDS_JSON="["
@@ -239,36 +161,31 @@ else
     VOLUMES_JSON="[]"
 fi
 
-# Convert GPU_TYPE to Batch format
-if [ -n "${GPU_TYPE}" ]; then
-    case "${GPU_TYPE}" in
-        NVIDIA_TESLA_A100) BATCH_GPU_TYPE="nvidia-tesla-a100" ;;
-        NVIDIA_A100_80GB) BATCH_GPU_TYPE="nvidia-a100-80gb" ;;
-        NVIDIA_H100_80GB) BATCH_GPU_TYPE="nvidia-h100-80gb" ;;
-        NVIDIA_L4) BATCH_GPU_TYPE="nvidia-l4" ;;
-        NVIDIA_RTX_A6000) BATCH_GPU_TYPE="nvidia-tesla-a100" ;; # Fallback
-        *) BATCH_GPU_TYPE="nvidia-l4" ;;
-    esac
-else
-    BATCH_GPU_TYPE=""
-fi
+# Calculate boot disk size in MiB
+BOOT_DISK_MIB=$((BOOT_DISK_SIZE * 1024))
 
-# Replace placeholders
-sed -i.bak \
-    -e "s|IMAGE_URI_PLACEHOLDER|${IMAGE_URI}|g" \
-    -e "s|COMMANDS_PLACEHOLDER|${COMMANDS_JSON}|g" \
-    -e "s|VOLUMES_PLACEHOLDER|${VOLUMES_JSON}|g" \
-    -e "s|MACHINE_TYPE_PLACEHOLDER|${MACHINE_TYPE}|g" \
-    -e "s|GPU_TYPE_PLACEHOLDER|${BATCH_GPU_TYPE}|g" \
-    -e "s|GPU_COUNT_PLACEHOLDER|${GPU_COUNT}|g" \
-    -e "s|CPU_MILLI_PLACEHOLDER|${CPU_MILLI}|g" \
-    -e "s|MEMORY_MIB_PLACEHOLDER|${MEMORY_MIB}|g" \
-    -e "s|BOOT_DISK_SIZE_PLACEHOLDER|$((BOOT_DISK_SIZE * 1024))|g" \
-    -e "s|CONTAINER_OPTIONS_PLACEHOLDER|${CONTAINER_OPTIONS}|g" \
-    -e "s|WANDB_API_KEY_PLACEHOLDER|${WANDB_API_KEY}|g" \
-    -e "s|HF_TOKEN_PLACEHOLDER|${HF_TOKEN}|g" \
-    "${CONFIG_FILE}"
-rm -f "${CONFIG_FILE}.bak"
+# Create JSON data file for mustache
+MUSTACHE_DATA=$(mktemp /tmp/mustache-data-XXXXXX.json)
+trap "rm -f ${CONFIG_FILE} ${MUSTACHE_DATA}" EXIT
+
+cat > "${MUSTACHE_DATA}" << EOF
+{
+  "IMAGE_URI": "${IMAGE_URI}",
+  "COMMANDS_JSON": ${COMMANDS_JSON},
+  "VOLUMES_JSON": ${VOLUMES_JSON},
+  "MACHINE_TYPE": "${MACHINE_TYPE}",
+  "GPU_TYPE": "${GPU_TYPE}",
+  "GPU_COUNT": ${GPU_COUNT},
+  "CPU_MILLI": "${CPU_MILLI}",
+  "MEMORY_MIB": "${MEMORY_MIB}",
+  "BOOT_DISK_MIB": "${BOOT_DISK_MIB}",
+  "CONTAINER_OPTIONS": "${CONTAINER_OPTIONS}",
+  "HAS_GPU": $([ -n "${GPU_TYPE}" ] && echo "true" || echo "false")
+}
+EOF
+
+# Render template with mustache
+mustache "${MUSTACHE_DATA}" templates/batch-job.json > "${CONFIG_FILE}"
 
 # Execute the command
 gcloud batch jobs submit \
