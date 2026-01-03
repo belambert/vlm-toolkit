@@ -77,7 +77,10 @@ def main(
     for i in range(0, len(image_files), batch_size):
         batch = image_files[i : i + batch_size]
         batch_num = i // batch_size + 1
-        print(f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...", flush=True)
+        print(
+            f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...",
+            flush=True,
+        )
 
         try:
             batch_results = detect_logo_batch(model, processor, batch, device)
