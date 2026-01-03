@@ -56,7 +56,7 @@ def main(
     batch_size: int = typer.Option(1, help="Number of images to process in parallel"),
 ):
     """Detect logos with a VLM.
-    
+
     Some other good models to use:
 
     - Qwen/Qwen3-VL-2B-Instruct
@@ -77,15 +77,13 @@ def main(
     for i in range(0, len(image_files), batch_size):
         batch = image_files[i : i + batch_size]
         batch_num = i // batch_size + 1
-        typer.echo(
-            f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)..."
-        )
+        print(f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...")
 
         try:
             batch_results = detect_logo_batch(model, processor, batch, device)
             results.extend(batch_results)
         except Exception as e:
-            typer.echo(f"  Error processing batch: {e}, skipping...")
+            print(f"  Error processing batch: {e}, skipping...")
 
     if output is None:
         output = folder / "logo_detections.json"
@@ -93,8 +91,8 @@ def main(
     with open(output, "w") as f:
         json.dump(results, f, indent=2)
 
-    typer.echo(f"\nResults saved to: {output}")
-    typer.echo(f"Processed: {len(results)}/{len(image_files)} images")
+    print(f"\nResults saved to: {output}")
+    print(f"Processed: {len(results)}/{len(image_files)} images")
 
 
 if __name__ == "__main__":

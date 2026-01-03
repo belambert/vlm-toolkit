@@ -1,0 +1,27 @@
+name: Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  style:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install formatters
+        run: pip install black isort
+
+      - name: Check code formatting with Black
+        run: black --check --diff src/
+
+      - name: Check import sorting with isort
+        run: isort --check-only --diff src/
