@@ -28,5 +28,5 @@ def find_images(folder: Path) -> list[Path]:
     image_files = []
     for ext in IMG_EXTENSIONS:
         image_files.extend(folder.glob(f"*.{ext}"))
-    print(f"Found {len(image_files)} images to check")
+    print(f"Found {len(image_files)} images to check", flush=True)
     return image_files

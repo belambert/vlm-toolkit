@@ -77,13 +77,13 @@ def main(
     for i in range(0, len(image_files), batch_size):
         batch = image_files[i : i + batch_size]
         batch_num = i // batch_size + 1
-        print(f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...")
+        print(f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...", flush=True)
 
         try:
             batch_results = detect_logo_batch(model, processor, batch, device)
             results.extend(batch_results)
         except Exception as e:
-            print(f"  Error processing batch: {e}, skipping...")
+            print(f"  Error processing batch: {e}, skipping...", flush=True)
 
     if output is None:
         output = folder / "logo_detections.json"
@@ -91,8 +91,8 @@ def main(
     with open(output, "w") as f:
         json.dump(results, f, indent=2)
 
-    print(f"\nResults saved to: {output}")
-    print(f"Processed: {len(results)}/{len(image_files)} images")
+    print(f"\nResults saved to: {output}", flush=True)
+    print(f"Processed: {len(results)}/{len(image_files)} images", flush=True)
 
 
 if __name__ == "__main__":
