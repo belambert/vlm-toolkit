@@ -2,6 +2,7 @@ from pathlib import Path
 
 from PIL import Image
 from qwen_vl_utils import process_vision_info
+from transformers import AutoModelForImageTextToText, AutoProcessor
 
 from imggen.img_utils import resize_image_if_needed
 
@@ -63,3 +64,10 @@ def prepare_vlm_batch(processor, image_paths: list[Path], prompt: str, device: s
     inputs = inputs.to(device)
 
     return inputs
+
+
+def load_model(model_name: str, device: str):
+    """Load VLM and processor."""
+    model = AutoModelForImageTextToText.from_pretrained(model_name, device_map="auto")
+    processor = AutoProcessor.from_pretrained(model_name)
+    return model, processor

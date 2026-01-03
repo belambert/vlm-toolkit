@@ -1,14 +1,11 @@
 import json
 from pathlib import Path
 
-import torch
 import typer
-from PIL import Image
-from transformers import AutoModelForImageTextToText, AutoProcessor
 
 from imggen.img_utils import find_images, resize_image_if_needed
 from imggen.util import get_device
-from imggen.vlm import prepare_vlm_batch
+from imggen.vlm import load_model, prepare_vlm_batch
 
 app = typer.Typer()
 
@@ -98,13 +95,6 @@ def main(
 
     typer.echo(f"\nResults saved to: {output}")
     typer.echo(f"Processed: {len(results)}/{len(image_files)} images")
-
-
-def load_model(model_name: str, device: str):
-    """Load VLM and processor."""
-    model = AutoModelForImageTextToText.from_pretrained(model_name, device_map="auto")
-    processor = AutoProcessor.from_pretrained(model_name)
-    return model, processor
 
 
 if __name__ == "__main__":
