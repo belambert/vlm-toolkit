@@ -12,7 +12,6 @@ format:
 
 test:
 	@echo "Running tests..."
-	uv sync --extra dev
 	uv run pytest
 
 install:
