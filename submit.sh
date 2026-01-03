@@ -160,11 +160,15 @@ BOOT_DISK_MIB=$((BOOT_DISK_SIZE * 1024))
 MUSTACHE_DATA=$(mktemp /tmp/mustache-data-XXXXXX.json)
 trap "rm -f ${CONFIG_FILE} ${MUSTACHE_DATA}" EXIT
 
+# Escape JSON for embedding in JSON string
+COMMANDS_JSON_ESCAPED=$(echo "${COMMANDS_JSON}" | sed 's/"/\\"/g')
+VOLUMES_JSON_ESCAPED=$(echo "${VOLUMES_JSON}" | sed 's/"/\\"/g')
+
 cat > "${MUSTACHE_DATA}" << EOF
 {
   "IMAGE_URI": "${IMAGE_URI}",
-  "COMMANDS_JSON": ${COMMANDS_JSON},
-  "VOLUMES_JSON": ${VOLUMES_JSON},
+  "COMMANDS_JSON": "${COMMANDS_JSON_ESCAPED}",
+  "VOLUMES_JSON": "${VOLUMES_JSON_ESCAPED}",
   "MACHINE_TYPE": "${MACHINE_TYPE}",
   "GPU_TYPE": "${GPU_TYPE}",
   "GPU_COUNT": ${GPU_COUNT},

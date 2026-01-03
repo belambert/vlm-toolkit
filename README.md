@@ -2,31 +2,25 @@
 
 ## Prerequisites
 
-```bash
-brew install mstch
-```
+    gem install mustache
 
 ## Installation
 
 Install base dependencies:
-```bash
-uv sync
-```
+
+    uv sync
 
 Install with ML/inference dependencies (required for detect-logo):
-```bash
-uv sync --extra ml
-```
+
+    uv sync --extra ml
 
 Install with dev dependencies (includes pytest):
-```bash
-uv sync --extra dev
-```
+
+    uv sync --extra dev
 
 Install everything:
-```bash
-uv sync --all-extras
-```
+
+    uv sync --all-extras
 
 ## Running Jobs on Google Cloud Batch
 
@@ -34,36 +28,33 @@ The `submit.sh` script submits jobs to Google Cloud Batch. It supports CPU-only 
 
 ### Basic Usage
 
-```bash
-./submit.sh <command>
-```
+    ./submit.sh <command>
 
 ### Examples
 
 **CPU-only (default):**
-```bash
-./submit.sh uv run detect-logo /mnt/disks/gcs/images
-```
+
+    ./submit.sh uv run detect-logo /mnt/disks/gcs/images
 
 **Single GPU (nvidia-l4):**
-```bash
-GPU_TYPE=nvidia-l4 ./submit.sh uv run detect-logo /mnt/disks/gcs/images --batch-size 8
-```
+
+    GPU_TYPE=nvidia-l4 ./submit.sh uv run detect-logo /mnt/disks/gcs/images --batch-size 8
+
 
 **Single GPU (nvidia-a100-80gb):**
-```bash
-GPU_TYPE=nvidia-a100-80gb ./submit.sh uv run detect-logo /mnt/disks/gcs/images --batch-size 16
-```
+
+    GPU_TYPE=nvidia-a100-80gb ./submit.sh uv run detect-logo /mnt/disks/gcs/images --batch-size 16
+
 
 **Multiple GPUs (2x nvidia-l4):**
-```bash
-GPU_TYPE=nvidia-l4 GPU_COUNT=2 ./submit.sh uv run your-training-script
-```
+
+    GPU_TYPE=nvidia-l4 GPU_COUNT=2 ./submit.sh uv run your-training-script
+
 
 **With GCS bucket mounted:**
-```bash
-BUCKET=my-bucket-name GPU_TYPE=nvidia-l4 ./submit.sh uv run detect-logo /mnt/disks/gcs/images
-```
+
+    BUCKET=my-bucket-name GPU_TYPE=nvidia-l4 ./submit.sh uv run detect-logo /mnt/disks/gcs/images
+
 
 ### Available GPU Types
 

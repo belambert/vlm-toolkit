@@ -11,8 +11,10 @@ format:
 	isort src/
 
 test:
+	@echo "Installing dependencies..."
+	@uv sync --extra dev --quiet
 	@echo "Running tests..."
-	uv run pytest
+	@uv run pytest
 
 install:
 	@echo "Installing dependencies..."
