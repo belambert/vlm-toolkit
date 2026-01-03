@@ -33,10 +33,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
 
 # Install dependencies only (without the project itself)
-RUN uv sync --frozen --no-install-project
+RUN uv sync --frozen --extra ml --no-install-project
 
 # Now copy source code
 COPY src/ ./src/
 
 # Install the project
-RUN uv sync --frozen
+RUN uv sync --frozen --extra ml

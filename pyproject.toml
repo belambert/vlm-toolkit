@@ -8,23 +8,25 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "accelerate>=1.12.0",
-    "diffusers>=0.36.0",
-    "ftfy>=6.3.1",
     "google-auth>=2.45.0",
     "google-cloud-storage>=3.7.0",
-    "peft>=0.18.0",
     "pillow>=12.0.0",
-    "protobuf>=6.33.2",
     "pydantic>=2.12.5",
-    "qwen-vl-utils>=0.0.14",
-    "sentencepiece>=0.2.1",
-    "torchvision>=0.24.1",
-    "transformers>=4.57.3",
     "typer>=0.21.0",
 ]
 
 [project.optional-dependencies]
+ml = [
+    "accelerate>=1.12.0",
+    "diffusers>=0.36.0",
+    "ftfy>=6.3.1",
+    "peft>=0.18.0",
+    "protobuf>=6.33.2",
+    "qwen-vl-utils>=0.0.14",
+    "sentencepiece>=0.2.1",
+    "torchvision>=0.24.1",
+    "transformers>=4.57.3",
+]
 dev = [
     "pytest>=8.3.4",
 ]

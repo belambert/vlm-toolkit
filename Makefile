@@ -1,4 +1,4 @@
-.PHONY: check format test
+.PHONY: check format test install install-ml
 
 check:
 	@echo "Running style checks..."
@@ -14,3 +14,7 @@ test:
 	@echo "Running tests..."
 	uv sync --extra dev
 	uv run pytest
+
+install:
+	@echo "Installing dependencies..."
+	uv sync --extra ml

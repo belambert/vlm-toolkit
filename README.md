@@ -6,6 +6,28 @@
 brew install mstch
 ```
 
+## Installation
+
+Install base dependencies:
+```bash
+uv sync
+```
+
+Install with ML/inference dependencies (required for detect-logo):
+```bash
+uv sync --extra ml
+```
+
+Install with dev dependencies (includes pytest):
+```bash
+uv sync --extra dev
+```
+
+Install everything:
+```bash
+uv sync --all-extras
+```
+
 ## Running Jobs on Google Cloud Batch
 
 The `submit.sh` script submits jobs to Google Cloud Batch. It supports CPU-only and GPU configurations.
