@@ -43,7 +43,7 @@ def detect_logo_batch(
     # Create results
     results = []
     for image_path, response in zip(image_paths, responses):
-        results.append({"image_path": str(image_path), "detection": response})
+        results.append({"image_path": str(image_path), "output": response})
 
     return results
 

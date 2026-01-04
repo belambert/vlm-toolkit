@@ -70,7 +70,7 @@ def remove_watermark(
         mask_image=mask,
         num_inference_steps=20,
         guidance_scale=7.5,
-        strength=1.0,
+        # strength=1.0,
         width=width,
         height=height,
     ).images[0]
@@ -85,7 +85,7 @@ def remove_watermark(
 @app.command()
 def main(
     detections_json: Path = typer.Argument(
-        ..., help="JSON file from detect_logo.py script"
+        ..., help="JSON file from vlm-process or detect-logo"
     ),
     output_dir: Path = typer.Argument(None, help="Output directory for cleaned images"),
     model_name: str = typer.Option(
@@ -108,7 +108,7 @@ def main(
     print(f"Loaded {len(detections)} detections", flush=True)
 
     # Filter out images without watermarks
-    images_to_clean = [d for d in detections if "none" not in d["detection"].lower()]
+    images_to_clean = [d for d in detections if "none" not in d["output"].lower()]
 
     print(f"Found {len(images_to_clean)} images with watermarks to remove", flush=True)
 
@@ -136,7 +136,7 @@ def main(
     results = []
     for detection in images_to_clean:
         image_path = Path(detection["image_path"])
-        location = detection["detection"].strip()
+        location = detection["output"].strip()
 
         print(f"Processing: {image_path.name} ({location})...", end="", flush=True)
 

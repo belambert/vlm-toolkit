@@ -10,7 +10,7 @@ Install base dependencies:
 
     uv sync
 
-Install with ML/inference dependencies (required for detect-logo):
+Install with ML/inference dependencies (required for vlm-process, detect-logo, remove-logo):
 
     uv sync --extra ml
 
@@ -34,26 +34,29 @@ The `submit.sh` script submits jobs to Google Cloud Batch. It supports CPU-only 
 
 **CPU-only (default):**
 
-    ./submit.sh uv run detect-logo /mnt/disks/gcs/images
+    ./submit.sh uv run vlm-process /mnt/disks/gcs/images
 
 **Single GPU (nvidia-l4):**
 
-    GPU_TYPE=nvidia-l4 ./submit.sh uv run detect-logo /mnt/disks/gcs/images --batch-size 8
-
+    GPU_TYPE=nvidia-l4 ./submit.sh uv run vlm-process /mnt/disks/gcs/images --batch-size 8
 
 **Single GPU (nvidia-a100-80gb):**
 
-    GPU_TYPE=nvidia-a100-80gb ./submit.sh uv run detect-logo /mnt/disks/gcs/images --batch-size 16
-
+    GPU_TYPE=nvidia-a100-80gb ./submit.sh uv run vlm-process /mnt/disks/gcs/images --batch-size 16
 
 **Multiple GPUs (2x nvidia-l4):**
 
     GPU_TYPE=nvidia-l4 GPU_COUNT=2 ./submit.sh uv run your-training-script
 
-
 **With GCS bucket mounted:**
 
-    BUCKET=my-bucket-name GPU_TYPE=nvidia-l4 ./submit.sh uv run detect-logo /mnt/disks/gcs/images
+    BUCKET=my-bucket-name GPU_TYPE=nvidia-l4 ./submit.sh uv run vlm-process /mnt/disks/gcs/images
+
+**With custom prompt:**
+
+    ./submit.sh uv run vlm-process /mnt/disks/gcs/images --prompt "Describe this image in one sentence"
+
+**Note:** `detect-logo` is still available for backward compatibility and works the same as `vlm-process` with the default watermark detection prompt.
 
 
 ### Available GPU Types

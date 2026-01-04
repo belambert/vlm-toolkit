@@ -31,6 +31,11 @@ dev = [
     "pytest>=8.3.4",
 ]
 
+[project.scripts]
+vlm-process = "imggen.cmd.vlm_process:app"
+detect-logo = "imggen.detect_logo:app"
+remove-logo = "imggen.remove_logo:app"
+
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]
 build-backend = "uv_build"
