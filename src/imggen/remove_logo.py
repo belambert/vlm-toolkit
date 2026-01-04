@@ -95,7 +95,7 @@ def main(
     """Remove watermarks from images using inpainting."""
 
     if not detections_json.exists():
-        typer.echo(f"Error: {detections_json} does not exist")
+        print(f"Error: {detections_json} does not exist", flush=True)
         raise typer.Exit(1)
 
     output_dir.mkdir(exist_ok=True, parents=True)
@@ -104,17 +104,17 @@ def main(
     with open(detections_json) as f:
         detections = json.load(f)
 
-    typer.echo(f"Loaded {len(detections)} detections")
+    print(f"Loaded {len(detections)} detections", flush=True)
 
     # Filter out images without watermarks
     images_to_clean = [d for d in detections if "none" not in d["detection"].lower()]
 
-    typer.echo(f"Found {len(images_to_clean)} images with watermarks to remove")
+    print(f"Found {len(images_to_clean)} images with watermarks to remove", flush=True)
 
     # Load model
     device = get_device()
-    typer.echo(f"Using device: {device}")
-    typer.echo(f"Loading model: {model_name}...")
+    print(f"Using device: {device}", flush=True)
+    print(f"Loading model: {model_name}...", flush=True)
 
     pipe = AutoPipelineForInpainting.from_pretrained(
         model_name,
@@ -128,7 +128,7 @@ def main(
     pipe.enable_attention_slicing()
     pipe.vae.enable_slicing()
 
-    typer.echo("Model loaded successfully\n")
+    print("Model loaded successfully\n", flush=True)
 
     # Process each image
     results = []
@@ -136,20 +136,20 @@ def main(
         image_path = Path(detection["image_path"])
         location = detection["detection"].strip()
 
-        typer.echo(f"Processing: {image_path.name} ({location})...", nl=False)
+        print(f"Processing: {image_path.name} ({location})...", end="", flush=True)
 
         try:
             output_path = remove_watermark(
                 pipe, image_path, location, output_dir, device
             )
             results.append(output_path)
-            typer.echo(f" ✓ Saved to {output_path.name}")
+            print(f" ✓ Saved to {output_path.name}", flush=True)
         except Exception as e:
-            typer.echo(f" ✗ Error: {e}")
+            print(f" ✗ Error: {e}", flush=True)
             continue
 
-    typer.echo(f"\nProcessed {len(results)}/{len(images_to_clean)} images")
-    typer.echo(f"Cleaned images saved to: {output_dir}")
+    print(f"\nProcessed {len(results)}/{len(images_to_clean)} images", flush=True)
+    print(f"Cleaned images saved to: {output_dir}", flush=True)
 
 
 if __name__ == "__main__":
