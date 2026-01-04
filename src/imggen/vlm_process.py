@@ -7,6 +7,7 @@ from imggen.vlm import load_model, prepare_vlm_batch
 
 DEFAULT_PROMPT = "Describe this image."
 
+
 def vlm_process(
     folder: Path,
     output: Path | None = None,
@@ -66,6 +67,7 @@ def vlm_process(
     print(f"Processed: {len(results)}/{len(image_files)} images", flush=True)
 
     return output
+
 
 def process_batch(
     model, processor, image_paths: list[Path], prompt: str, device: str
