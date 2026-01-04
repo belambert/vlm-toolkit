@@ -86,9 +86,9 @@ def main(
     detections_json: Path = typer.Argument(
         ..., help="JSON file from detect_logo.py script"
     ),
-    output_dir: Path = typer.Option(None, help="Output directory for cleaned images"),
+    output_dir: Path = typer.Argument(None, help="Output directory for cleaned images"),
     model_name: str = typer.Option(
-        "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
+        "runwayml/stable-diffusion-inpainting",
         help="Inpainting model to use",
     ),
 ):
@@ -98,9 +98,6 @@ def main(
         typer.echo(f"Error: {detections_json} does not exist")
         raise typer.Exit(1)
 
-    # Set output directory
-    if output_dir is None:
-        output_dir = detections_json.parent / "cleaned"
     output_dir.mkdir(exist_ok=True, parents=True)
 
     # Load detections
@@ -112,10 +109,6 @@ def main(
     # Filter out images without watermarks
     images_to_clean = [d for d in detections if "none" not in d["detection"].lower()]
 
-    if not images_to_clean:
-        typer.echo("No watermarks to remove!")
-        raise typer.Exit(0)
-
     typer.echo(f"Found {len(images_to_clean)} images with watermarks to remove")
 
     # Load model
@@ -125,9 +118,15 @@ def main(
 
     pipe = AutoPipelineForInpainting.from_pretrained(
         model_name,
-        dtype=torch.float16 if device != "cpu" else torch.float32,
+        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        safety_checker=None,
+        requires_safety_checker=False,
     )
     pipe.to(device)
+
+    # Enable memory optimizations
+    pipe.enable_attention_slicing()
+    pipe.vae.enable_slicing()
 
     typer.echo("Model loaded successfully\n")
 

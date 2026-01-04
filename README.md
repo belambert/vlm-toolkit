@@ -73,3 +73,7 @@ The `submit.sh` script submits jobs to Google Cloud Batch. It supports CPU-only 
 - `IMAGE_TAG` - Docker image tag (default: latest)
 - `WANDB_API_KEY` - Weights & Biases API key (optional)
 - `HF_TOKEN` - Hugging Face token (optional)
+
+
+Detect logo took 1 hour to do 5000 imgs
+on L4 GPU at ~$1/hour

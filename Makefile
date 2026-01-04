@@ -11,11 +11,9 @@ format:
 	isort src/
 
 test:
-	@echo "Installing dependencies..."
-	@uv sync --extra dev --quiet
 	@echo "Running tests..."
 	@uv run pytest
 
 install:
 	@echo "Installing dependencies..."
-	uv sync --extra ml
+	uv sync --extra ml --extra dev
