@@ -34,6 +34,7 @@ dev = [
 [project.scripts]
 vlm-process = "imggen.cmd.vlm_process:app"
 detect-logo = "imggen.cmd.detect_logo:app"
+caption-images = "imggen.cmd.caption_images:app"
 remove-logo = "imggen.remove_logo:app"
 
 [build-system]
