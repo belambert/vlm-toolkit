@@ -70,12 +70,13 @@ def remove_watermark(
         mask_image=mask,
         num_inference_steps=20,
         guidance_scale=7.5,
+        strength=1.0,
         width=width,
         height=height,
     ).images[0]
 
     # Save result
-    output_path = output_dir / f"cleaned_{image_path.name}"
+    output_path = output_dir / f"{image_path.name}"
     result.save(output_path)
 
     return output_path
@@ -88,7 +89,7 @@ def main(
     ),
     output_dir: Path = typer.Argument(None, help="Output directory for cleaned images"),
     model_name: str = typer.Option(
-        "runwayml/stable-diffusion-inpainting",
+        "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
         help="Inpainting model to use",
     ),
 ):
@@ -122,6 +123,7 @@ def main(
         safety_checker=None,
         requires_safety_checker=False,
     )
+    pipe.set_progress_bar_config(disable=True)
     pipe.to(device)
 
     # Enable memory optimizations
