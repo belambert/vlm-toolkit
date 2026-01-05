@@ -30,3 +30,32 @@ def find_images(folder: Path) -> list[Path]:
         image_files.extend(folder.glob(f"*.{ext}"))
     print(f"Found {len(image_files)} images to check", flush=True)
     return image_files
+
+
+def ensure_dimensions_divisible_by_8(image: Image.Image) -> Image.Image:
+    """Ensure image dimensions are divisible by 8 by cropping pixels from edges.
+
+    Args:
+        image: PIL Image to check/crop
+
+    Returns:
+        Cropped image with dimensions divisible by 8
+    """
+    orig_width, orig_height = image.size
+    width = (orig_width // 8) * 8
+    height = (orig_height // 8) * 8
+
+    if width != orig_width or height != orig_height:
+        # Calculate pixels to remove from each edge
+        width_diff = orig_width - width
+        height_diff = orig_height - height
+
+        # Remove evenly from both sides (if odd, remove extra from right/bottom)
+        left = width_diff // 2
+        top = height_diff // 2
+        right = orig_width - (width_diff - left)
+        bottom = orig_height - (height_diff - top)
+
+        image = image.crop((left, top, right, bottom))
+
+    return image

@@ -1,5 +1,6 @@
 import json
 import re
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 import cv2
@@ -9,6 +10,7 @@ import typer
 from diffusers import AutoPipelineForInpainting
 from PIL import Image, ImageDraw
 
+from imggen.img_utils import ensure_dimensions_divisible_by_8
 from imggen.util import get_device
 
 app = typer.Typer()
@@ -86,100 +88,107 @@ def create_mask_from_bboxes(width: int, height: int, bboxes: list[dict]) -> Imag
     return mask
 
 
-def ensure_dimensions_divisible_by_8(image: Image.Image) -> Image.Image:
-    """Ensure image dimensions are divisible by 8 by cropping pixels from edges.
+class LogoRemover(ABC):
+    """Base class for logo removal algorithms."""
 
-    Args:
-        image: PIL Image to check/crop
+    @abstractmethod
+    def remove(self, image: Image.Image, bboxes: list[dict]) -> Image.Image:
+        """Remove logos from an image.
 
-    Returns:
-        Cropped image with dimensions divisible by 8
-    """
-    orig_width, orig_height = image.size
-    width = (orig_width // 8) * 8
-    height = (orig_height // 8) * 8
+        Args:
+            image: PIL Image to process
+            bboxes: List of bounding box dictionaries with bbox_2d field
 
-    if width != orig_width or height != orig_height:
-        # Calculate pixels to remove from each edge
-        width_diff = orig_width - width
-        height_diff = orig_height - height
-
-        # Remove evenly from both sides (if odd, remove extra from right/bottom)
-        left = width_diff // 2
-        top = height_diff // 2
-        right = orig_width - (width_diff - left)
-        bottom = orig_height - (height_diff - top)
-
-        image = image.crop((left, top, right, bottom))
-
-    return image
+        Returns:
+            Processed PIL Image with logos removed
+        """
+        pass
 
 
-def remove_logo_gray(image: Image.Image, bboxes: list[dict]) -> Image.Image:
-    """Remove logo from an image by replacing with gray rectangles."""
-    # Convert PIL Image to OpenCV format (BGR)
-    image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    height, width = image_cv.shape[:2]
+class GrayLogoRemover(LogoRemover):
+    """Remove logos by replacing with gray rectangles."""
 
-    # Draw gray rectangles over bboxes
-    for bbox in bboxes:
-        if "bbox_2d" in bbox:
-            # Scale bbox from 1000x1000 to actual image dimensions
-            x1, y1, x2, y2 = scale_bbox(bbox["bbox_2d"], width, height)
-            # Fill with medium gray (128, 128, 128)
-            cv2.rectangle(image_cv, (x1, y1), (x2, y2), (128, 128, 128), -1)
+    def remove(self, image: Image.Image, bboxes: list[dict]) -> Image.Image:
+        """Remove logo from an image by replacing with gray rectangles."""
+        # Convert PIL Image to OpenCV format (BGR)
+        image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        height, width = image_cv.shape[:2]
 
-    # Convert back to PIL Image
-    result = Image.fromarray(cv2.cvtColor(image_cv, cv2.COLOR_BGR2RGB))
-    return result
+        # Draw gray rectangles over bboxes
+        for bbox in bboxes:
+            if "bbox_2d" in bbox:
+                # Scale bbox from 1000x1000 to actual image dimensions
+                x1, y1, x2, y2 = scale_bbox(bbox["bbox_2d"], width, height)
+                # Fill with medium gray (128, 128, 128)
+                cv2.rectangle(image_cv, (x1, y1), (x2, y2), (128, 128, 128), -1)
 
-
-def remove_logo_opencv(image: Image.Image, bboxes: list[dict]) -> Image.Image:
-    """Remove logo from an image using OpenCV inpainting."""
-    # Convert PIL Image to OpenCV format (BGR)
-    image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    height, width = image_cv.shape[:2]
-
-    # Create binary mask
-    mask = np.zeros((height, width), dtype=np.uint8)
-    for bbox in bboxes:
-        if "bbox_2d" in bbox:
-            # Scale bbox from 1000x1000 to actual image dimensions
-            x1, y1, x2, y2 = scale_bbox(bbox["bbox_2d"], width, height)
-            # Draw white rectangle where logo is
-            cv2.rectangle(mask, (x1, y1), (x2, y2), 255, -1)
-
-    # Run OpenCV inpainting (Telea method)
-    result_cv = cv2.inpaint(image_cv, mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
-
-    # Convert back to PIL Image
-    result = Image.fromarray(cv2.cvtColor(result_cv, cv2.COLOR_BGR2RGB))
-    return result
+        # Convert back to PIL Image
+        result = Image.fromarray(cv2.cvtColor(image_cv, cv2.COLOR_BGR2RGB))
+        return result
 
 
-def remove_logo_sdxl(pipe, image: Image.Image, bboxes: list[dict]) -> Image.Image:
-    """Remove logo from an image using SDXL inpainting."""
-    # Ensure dimensions are divisible by 8
-    image = ensure_dimensions_divisible_by_8(image)
-    width, height = image.size
+class OpenCVLogoRemover(LogoRemover):
+    """Remove logos using OpenCV inpainting."""
 
-    # Create mask from bounding boxes
-    mask = create_mask_from_bboxes(width, height, bboxes)
+    def remove(self, image: Image.Image, bboxes: list[dict]) -> Image.Image:
+        """Remove logo from an image using OpenCV inpainting."""
+        # Convert PIL Image to OpenCV format (BGR)
+        image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        height, width = image_cv.shape[:2]
 
-    # Run inpainting
-    result = pipe(
-        prompt="clean background, no logo, no text",
-        negative_prompt="logo, text, signature",
-        image=image,
-        mask_image=mask,
-        num_inference_steps=20,
-        guidance_scale=7.5,
-        # strength=1.0,
-        width=width,
-        height=height,
-    ).images[0]
+        # Create binary mask
+        mask = np.zeros((height, width), dtype=np.uint8)
+        for bbox in bboxes:
+            if "bbox_2d" in bbox:
+                # Scale bbox from 1000x1000 to actual image dimensions
+                x1, y1, x2, y2 = scale_bbox(bbox["bbox_2d"], width, height)
+                # Draw white rectangle where logo is
+                cv2.rectangle(mask, (x1, y1), (x2, y2), 255, -1)
 
-    return result
+        # Run OpenCV inpainting (Telea method)
+        result_cv = cv2.inpaint(
+            image_cv, mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA
+        )
+
+        # Convert back to PIL Image
+        result = Image.fromarray(cv2.cvtColor(result_cv, cv2.COLOR_BGR2RGB))
+        return result
+
+
+class SDXLLogoRemover(LogoRemover):
+    """Remove logos using SDXL inpainting."""
+
+    def __init__(self, pipe):
+        """Initialize with SDXL inpainting pipeline.
+
+        Args:
+            pipe: AutoPipelineForInpainting instance
+        """
+        self.pipe = pipe
+
+    def remove(self, image: Image.Image, bboxes: list[dict]) -> Image.Image:
+        """Remove logo from an image using SDXL inpainting."""
+        # Ensure dimensions are divisible by 8
+        image = ensure_dimensions_divisible_by_8(image)
+        width, height = image.size
+
+        # Create mask from bounding boxes
+        mask = create_mask_from_bboxes(width, height, bboxes)
+
+        # Run inpainting
+        result = self.pipe(
+            prompt="clean background, no logo, no text",
+            negative_prompt="logo, text, signature",
+            image=image,
+            mask_image=mask,
+            num_inference_steps=20,
+            guidance_scale=7.5,
+            # strength=1.0,
+            width=width,
+            height=height,
+        ).images[0]
+
+        return result
 
 
 @app.command()
@@ -237,9 +246,8 @@ def main(
 
     print(f"Found {len(images_to_clean)} images with logos to remove", flush=True)
 
-    # Load model if using SDXL
-    pipe = None
-    device = None
+    # Create logo remover instance based on selected method
+    remover: LogoRemover
     if method == "sdxl":
         device = get_device()
         print(f"Using device: {device}", flush=True)
@@ -259,10 +267,13 @@ def main(
         pipe.vae.enable_slicing()
 
         print("Model loaded successfully\n", flush=True)
+        remover = SDXLLogoRemover(pipe)
     elif method == "opencv":
         print(f"Using OpenCV inpainting method\n", flush=True)
+        remover = OpenCVLogoRemover()
     else:
         print(f"Using gray rectangle replacement method\n", flush=True)
+        remover = GrayLogoRemover()
 
     # Process each image
     results = []
@@ -281,13 +292,8 @@ def main(
             # Load image
             image = Image.open(image_path).convert("RGB")
 
-            # Process image with selected method
-            if method == "gray":
-                result = remove_logo_gray(image, bboxes)
-            elif method == "opencv":
-                result = remove_logo_opencv(image, bboxes)
-            else:
-                result = remove_logo_sdxl(pipe, image, bboxes)
+            # Process image with remover
+            result = remover.remove(image, bboxes)
 
             # Save result
             output_path = output_dir / f"{image_path.name}"
