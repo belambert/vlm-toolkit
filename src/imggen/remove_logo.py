@@ -35,7 +35,9 @@ def parse_bboxes(output: str) -> list[dict]:
         return []
 
 
-def scale_bbox(bbox_coords: list[int], width: int, height: int) -> tuple[int, int, int, int]:
+def scale_bbox(
+    bbox_coords: list[int], width: int, height: int
+) -> tuple[int, int, int, int]:
     """Scale bounding box from normalized 1000x1000 coordinates to actual image size.
 
     Args:
@@ -82,6 +84,37 @@ def create_mask_from_bboxes(width: int, height: int, bboxes: list[dict]) -> Imag
             draw.rectangle([x1, y1, x2, y2], fill="white")
 
     return mask
+
+
+def ensure_dimensions_divisible_by_8(
+    image: Image.Image,
+) -> tuple[Image.Image, int, int]:
+    """Ensure image dimensions are divisible by 8 by cropping pixels from edges.
+
+    Args:
+        image: PIL Image to check/crop
+
+    Returns:
+        Tuple of (cropped_image, width, height)
+    """
+    orig_width, orig_height = image.size
+    width = (orig_width // 8) * 8
+    height = (orig_height // 8) * 8
+
+    if width != orig_width or height != orig_height:
+        # Calculate pixels to remove from each edge
+        width_diff = orig_width - width
+        height_diff = orig_height - height
+
+        # Remove evenly from both sides (if odd, remove extra from right/bottom)
+        left = width_diff // 2
+        top = height_diff // 2
+        right = orig_width - (width_diff - left)
+        bottom = orig_height - (height_diff - top)
+
+        image = image.crop((left, top, right, bottom))
+
+    return image, width, height
 
 
 def remove_watermark_gray(
@@ -140,15 +173,9 @@ def remove_watermark_sdxl(
     """Remove watermark from an image using SDXL inpainting."""
     # Load image
     image = Image.open(image_path).convert("RGB")
-    orig_width, orig_height = image.size
 
     # Ensure dimensions are divisible by 8
-    width = (orig_width // 8) * 8
-    height = (orig_height // 8) * 8
-
-    # Resize if needed
-    if width != orig_width or height != orig_height:
-        image = image.resize((width, height), Image.Resampling.LANCZOS)
+    image, width, height = ensure_dimensions_divisible_by_8(image)
 
     # Create mask from bounding boxes
     mask = create_mask_from_bboxes(width, height, bboxes)
