@@ -12,6 +12,9 @@ def main(
     folder: Path = typer.Argument(..., help="Folder containing images to process"),
     output: Path = typer.Option(None, help="Output JSON file"),
     prompt: str = typer.Option(DEFAULT_PROMPT, help="Prompt for the VLM"),
+    prompt_file: Path = typer.Option(
+        None, help="File containing prompt (overrides --prompt)"
+    ),
     model_name: str = typer.Option("Qwen/Qwen3-VL-2B-Instruct", help="HF model"),
     batch_size: int = typer.Option(1, help="Number of images to process in parallel"),
 ):
@@ -27,6 +30,10 @@ def main(
     All of these have quantized versions, which can be specified by adding "-FP8" to
     the end of the name.
     """
+    # Read prompt from file if provided
+    if prompt_file is not None:
+        prompt = prompt_file.read_text().strip()
+
     vlm_process(
         folder=folder,
         output=output,
