@@ -86,13 +86,30 @@ class OpenCVLogoRemover(LogoRemover):
 class SDXLLogoRemover(LogoRemover):
     """Remove logos using SDXL inpainting."""
 
-    def __init__(self, pipe):
-        """Initialize with SDXL inpainting pipeline.
+    def __init__(self, model_name: str):
+        """Initialize with SDXL inpainting model.
 
         Args:
-            pipe: AutoPipelineForInpainting instance
+            model_name: Name of the inpainting model to load
         """
-        self.pipe = pipe
+        device = get_device()
+        print(f"Using device: {device}", flush=True)
+        print(f"Loading model: {model_name}...", flush=True)
+
+        self.pipe = AutoPipelineForInpainting.from_pretrained(
+            model_name,
+            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+            safety_checker=None,
+            requires_safety_checker=False,
+        )
+        self.pipe.set_progress_bar_config(disable=True)
+        self.pipe.to(device)
+
+        # Enable memory optimizations
+        self.pipe.enable_attention_slicing()
+        self.pipe.vae.enable_slicing()
+
+        print("Model loaded successfully\n", flush=True)
 
     def remove(self, image: Image.Image, bboxes: list[dict]) -> Image.Image:
         """Remove logo from an image using SDXL inpainting."""
@@ -177,25 +194,7 @@ def main(
     # Create logo remover instance based on selected method
     remover: LogoRemover
     if method == "sdxl":
-        device = get_device()
-        print(f"Using device: {device}", flush=True)
-        print(f"Loading model: {model_name}...", flush=True)
-
-        pipe = AutoPipelineForInpainting.from_pretrained(
-            model_name,
-            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-            safety_checker=None,
-            requires_safety_checker=False,
-        )
-        pipe.set_progress_bar_config(disable=True)
-        pipe.to(device)
-
-        # Enable memory optimizations
-        pipe.enable_attention_slicing()
-        pipe.vae.enable_slicing()
-
-        print("Model loaded successfully\n", flush=True)
-        remover = SDXLLogoRemover(pipe)
+        remover = SDXLLogoRemover(model_name)
     elif method == "opencv":
         print(f"Using OpenCV inpainting method\n", flush=True)
         remover = OpenCVLogoRemover()
