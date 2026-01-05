@@ -16,7 +16,7 @@ def main(
         None, help="File containing prompt (overrides --prompt)"
     ),
     model_name: str = typer.Option("Qwen/Qwen3-VL-2B-Instruct", help="HF model"),
-    batch_size: int = typer.Option(1, help="Number of images to process in parallel"),
+    batch_size: int = typer.Option(8, help="Number of images to process in parallel"),
 ):
     """Process images using a Vision Language Model.
 
