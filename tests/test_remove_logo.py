@@ -1,14 +1,11 @@
-"""Tests for remove_logo module.
+"""Tests for remove_logo CLI module.
 
-TODO: Add tests for:
-- LogoRemover subclasses (GrayLogoRemover, OpenCVLogoRemover, SDXLLogoRemover)
-- Integration tests for the full removal pipeline
-- Edge cases (empty bboxes, invalid images, etc.)
+Logo remover class tests are in tests/logo/.
 """
 
 import pytest
 
 
 def test_placeholder():
-    """Placeholder test - remove_logo module tests to be implemented."""
+    """Placeholder test - CLI integration tests to be implemented."""
     pass
