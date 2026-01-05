@@ -70,4 +70,6 @@ def load_model(model_name: str, device: str):
     """Load VLM and processor."""
     model = AutoModelForImageTextToText.from_pretrained(model_name, device_map="auto")
     processor = AutoProcessor.from_pretrained(model_name)
+    # Set left padding for decoder-only models
+    processor.tokenizer.padding_side = "left"
     return model, processor
