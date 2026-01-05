@@ -5,7 +5,6 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 import typer
-import wandb
 from diffusers import DDPMPipeline, DDPMScheduler, UNet2DModel
 from diffusers.optimization import get_cosine_schedule_with_warmup
 from diffusers.training_utils import EMAModel
@@ -14,10 +13,12 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
 
+import wandb
+
 # Training hyperparameters
 IMAGE_SIZE = 128
 BATCH_SIZE = 16
-NUM_EPOCHS = 100
+NUM_EPOCHS = 1000
 LEARNING_RATE = 1e-4
 LR_WARMUP_STEPS = 500
 SAVE_IMAGE_EPOCHS = 10
@@ -79,6 +80,7 @@ def main(
     output_dir: Path = typer.Option(
         "diffusion-model", help="Output directory for model checkpoints"
     ),
+    num_epochs: int = typer.Option(NUM_EPOCHS, help="Number of training epochs"),
 ):
     """Train an unconditional diffusion model."""
     output_dir = Path(output_dir)
@@ -90,7 +92,7 @@ def main(
         config={
             "image_size": IMAGE_SIZE,
             "batch_size": BATCH_SIZE,
-            "num_epochs": NUM_EPOCHS,
+            "num_epochs": num_epochs,
             "learning_rate": LEARNING_RATE,
         },
     )
@@ -119,7 +121,7 @@ def main(
         optimizer=optimizer,
         num_warmup_steps=LR_WARMUP_STEPS,
         num_training_steps=(len(list(data_dir.glob("*.jpg"))) // BATCH_SIZE)
-        * NUM_EPOCHS,
+        * num_epochs,
     )
 
     # Setup EMA
@@ -138,14 +140,14 @@ def main(
 
     dataset = ImageFolder(data_dir, transform=transform)
     dataloader = DataLoader(
-        dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4
+        dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0  # 0 for MPS
     )
 
     print(f"Training on {len(dataset)} images")
 
     # Training loop
     global_step = 0
-    for epoch in range(NUM_EPOCHS):
+    for epoch in range(num_epochs):
         model.train()
         progress_bar = tqdm(total=len(dataloader), desc=f"Epoch {epoch}")
 
@@ -204,7 +206,13 @@ def main(
                 scheduler=noise_scheduler,
             )
 
-            with torch.no_grad():
+            # Disable autocast to avoid CUDA warnings on MPS
+            with (
+                torch.no_grad(),
+                torch.amp.autocast(
+                    device_type=str(device).split(":")[0], enabled=False
+                ),
+            ):
                 images = pipeline(
                     batch_size=4,
                     num_inference_steps=50,
