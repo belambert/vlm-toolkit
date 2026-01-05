@@ -90,13 +90,11 @@ def main(
         )
 
         try:
-            # Load image
+            # load
             image = Image.open(image_path).convert("RGB")
-
-            # Process image with remover
+            # process
             result = remover.remove(image, bboxes)
-
-            # Save result
+            # save
             output_path = output_dir / f"{image_path.name}"
             result.save(output_path)
 
