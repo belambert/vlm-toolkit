@@ -86,16 +86,14 @@ def create_mask_from_bboxes(width: int, height: int, bboxes: list[dict]) -> Imag
     return mask
 
 
-def ensure_dimensions_divisible_by_8(
-    image: Image.Image,
-) -> tuple[Image.Image, int, int]:
+def ensure_dimensions_divisible_by_8(image: Image.Image) -> Image.Image:
     """Ensure image dimensions are divisible by 8 by cropping pixels from edges.
 
     Args:
         image: PIL Image to check/crop
 
     Returns:
-        Tuple of (cropped_image, width, height)
+        Cropped image with dimensions divisible by 8
     """
     orig_width, orig_height = image.size
     width = (orig_width // 8) * 8
@@ -114,7 +112,7 @@ def ensure_dimensions_divisible_by_8(
 
         image = image.crop((left, top, right, bottom))
 
-    return image, width, height
+    return image
 
 
 def remove_watermark_gray(
@@ -175,7 +173,8 @@ def remove_watermark_sdxl(
     image = Image.open(image_path).convert("RGB")
 
     # Ensure dimensions are divisible by 8
-    image, width, height = ensure_dimensions_divisible_by_8(image)
+    image = ensure_dimensions_divisible_by_8(image)
+    width, height = image.size
 
     # Create mask from bounding boxes
     mask = create_mask_from_bboxes(width, height, bboxes)
