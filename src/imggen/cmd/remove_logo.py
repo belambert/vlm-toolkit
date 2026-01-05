@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from pathlib import Path
 
 import typer
@@ -10,14 +11,22 @@ from imggen.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover, SDXLLog
 app = typer.Typer()
 
 
+class RemovalMethod(str, Enum):
+    """Logo removal methods."""
+
+    GRAY = "gray"
+    OPENCV = "opencv"
+    SDXL = "sdxl"
+
+
 @app.command()
 def main(
     detections_json: Path = typer.Argument(
         ..., help="JSON file with bounding boxes (output from vlm-process)"
     ),
     output_dir: Path = typer.Argument(None, help="Output directory for cleaned images"),
-    method: str = typer.Option(
-        "opencv", help="Inpainting method: 'gray', 'opencv', or 'sdxl'"
+    method: RemovalMethod = typer.Option(
+        RemovalMethod.OPENCV, help="Inpainting method"
     ),
     model_name: str = typer.Option(
         "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
@@ -35,13 +44,6 @@ def main(
     - opencv: Fast, lightweight inpainting using OpenCV (recommended for simple cases)
     - sdxl: High-quality inpainting using Stable Diffusion XL (slower, better quality)
     """
-
-    if method not in ["gray", "opencv", "sdxl"]:
-        print(
-            f"Error: Invalid method '{method}'. Choose 'gray', 'opencv', or 'sdxl'",
-            flush=True,
-        )
-        raise typer.Exit(1)
 
     if not detections_json.exists():
         print(f"Error: {detections_json} does not exist", flush=True)
@@ -67,9 +69,9 @@ def main(
 
     # Create logo remover instance based on selected method
     remover: LogoRemover
-    if method == "sdxl":
+    if method == RemovalMethod.SDXL:
         remover = SDXLLogoRemover(model_name)
-    elif method == "opencv":
+    elif method == RemovalMethod.OPENCV:
         print(f"Using OpenCV inpainting method\n", flush=True)
         remover = OpenCVLogoRemover()
     else:

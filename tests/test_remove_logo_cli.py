@@ -45,8 +45,8 @@ def test_invalid_method(detections_json, tmp_path):
         app, [str(detections_json), str(output_dir), "--method", "invalid"]
     )
 
-    assert result.exit_code == 1
-    assert "Invalid method" in result.stdout
+    assert result.exit_code == 2
+    assert "Invalid value for '--method'" in result.output
 
 
 def test_missing_detections_file(tmp_path):
