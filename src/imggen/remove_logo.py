@@ -115,9 +115,7 @@ def ensure_dimensions_divisible_by_8(image: Image.Image) -> Image.Image:
     return image
 
 
-def remove_logo_gray(
-    image_path: Path, bboxes: list[dict], output_dir: Path
-) -> Path:
+def remove_logo_gray(image_path: Path, bboxes: list[dict], output_dir: Path) -> Path:
     """Remove logo from an image by replacing with gray rectangles."""
     # Load image with OpenCV
     image = cv2.imread(str(image_path))
@@ -138,9 +136,7 @@ def remove_logo_gray(
     return output_path
 
 
-def remove_logo_opencv(
-    image_path: Path, bboxes: list[dict], output_dir: Path
-) -> Path:
+def remove_logo_opencv(image_path: Path, bboxes: list[dict], output_dir: Path) -> Path:
     """Remove logo from an image using OpenCV inpainting."""
     # Load image with OpenCV
     image = cv2.imread(str(image_path))
