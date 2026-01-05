@@ -37,6 +37,7 @@ RUN uv sync --frozen --extra ml --no-install-project
 
 # Now copy source code
 COPY src/ ./src/
+COPY prompts/ ./prompts/
 
 # Install the project
 RUN uv sync --frozen --extra ml
