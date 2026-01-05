@@ -115,11 +115,11 @@ def ensure_dimensions_divisible_by_8(image: Image.Image) -> Image.Image:
     return image
 
 
-def remove_logo_gray(image_path: Path, bboxes: list[dict], output_dir: Path) -> Path:
+def remove_logo_gray(image: Image.Image, bboxes: list[dict]) -> Image.Image:
     """Remove logo from an image by replacing with gray rectangles."""
-    # Load image with OpenCV
-    image = cv2.imread(str(image_path))
-    height, width = image.shape[:2]
+    # Convert PIL Image to OpenCV format (BGR)
+    image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    height, width = image_cv.shape[:2]
 
     # Draw gray rectangles over bboxes
     for bbox in bboxes:
@@ -127,20 +127,18 @@ def remove_logo_gray(image_path: Path, bboxes: list[dict], output_dir: Path) -> 
             # Scale bbox from 1000x1000 to actual image dimensions
             x1, y1, x2, y2 = scale_bbox(bbox["bbox_2d"], width, height)
             # Fill with medium gray (128, 128, 128)
-            cv2.rectangle(image, (x1, y1), (x2, y2), (128, 128, 128), -1)
+            cv2.rectangle(image_cv, (x1, y1), (x2, y2), (128, 128, 128), -1)
 
-    # Save result
-    output_path = output_dir / f"{image_path.name}"
-    cv2.imwrite(str(output_path), image)
-
-    return output_path
+    # Convert back to PIL Image
+    result = Image.fromarray(cv2.cvtColor(image_cv, cv2.COLOR_BGR2RGB))
+    return result
 
 
-def remove_logo_opencv(image_path: Path, bboxes: list[dict], output_dir: Path) -> Path:
+def remove_logo_opencv(image: Image.Image, bboxes: list[dict]) -> Image.Image:
     """Remove logo from an image using OpenCV inpainting."""
-    # Load image with OpenCV
-    image = cv2.imread(str(image_path))
-    height, width = image.shape[:2]
+    # Convert PIL Image to OpenCV format (BGR)
+    image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    height, width = image_cv.shape[:2]
 
     # Create binary mask
     mask = np.zeros((height, width), dtype=np.uint8)
@@ -152,22 +150,15 @@ def remove_logo_opencv(image_path: Path, bboxes: list[dict], output_dir: Path) -
             cv2.rectangle(mask, (x1, y1), (x2, y2), 255, -1)
 
     # Run OpenCV inpainting (Telea method)
-    result = cv2.inpaint(image, mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
+    result_cv = cv2.inpaint(image_cv, mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
 
-    # Save result
-    output_path = output_dir / f"{image_path.name}"
-    cv2.imwrite(str(output_path), result)
-
-    return output_path
+    # Convert back to PIL Image
+    result = Image.fromarray(cv2.cvtColor(result_cv, cv2.COLOR_BGR2RGB))
+    return result
 
 
-def remove_logo_sdxl(
-    pipe, image_path: Path, bboxes: list[dict], output_dir: Path, device: str
-) -> Path:
+def remove_logo_sdxl(pipe, image: Image.Image, bboxes: list[dict]) -> Image.Image:
     """Remove logo from an image using SDXL inpainting."""
-    # Load image
-    image = Image.open(image_path).convert("RGB")
-
     # Ensure dimensions are divisible by 8
     image = ensure_dimensions_divisible_by_8(image)
     width, height = image.size
@@ -188,11 +179,7 @@ def remove_logo_sdxl(
         height=height,
     ).images[0]
 
-    # Save result
-    output_path = output_dir / f"{image_path.name}"
-    result.save(output_path)
-
-    return output_path
+    return result
 
 
 @app.command()
@@ -291,14 +278,21 @@ def main(
         )
 
         try:
+            # Load image
+            image = Image.open(image_path).convert("RGB")
+
+            # Process image with selected method
             if method == "gray":
-                output_path = remove_logo_gray(image_path, bboxes, output_dir)
+                result = remove_logo_gray(image, bboxes)
             elif method == "opencv":
-                output_path = remove_logo_opencv(image_path, bboxes, output_dir)
+                result = remove_logo_opencv(image, bboxes)
             else:
-                output_path = remove_logo_sdxl(
-                    pipe, image_path, bboxes, output_dir, device
-                )
+                result = remove_logo_sdxl(pipe, image, bboxes)
+
+            # Save result
+            output_path = output_dir / f"{image_path.name}"
+            result.save(output_path)
+
             results.append(output_path)
             print(f" ✓ Saved to {output_path.name}", flush=True)
         except Exception as e:
