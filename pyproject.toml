@@ -28,6 +28,8 @@ ml = [
     "sentencepiece>=0.2.1",
     "torchvision>=0.24.1",
     "transformers>=4.57.3",
+    "tqdm>=4.67.1",
+    "wandb>=0.19.1",
 ]
 dev = [
     "pytest>=8.3.4",
@@ -39,6 +41,7 @@ detect-logo = "imggen.cmd.detect_logo:app"
 caption-images = "imggen.cmd.caption_images:app"
 remove-logo = "imggen.cmd.remove_logo:app"
 view-vlm-output = "imggen.cmd.view_vlm_output:app"
+train-unconditional = "imggen.cmd.train_unconditional:app"
 
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]
