@@ -80,7 +80,7 @@ def create_mask_from_bboxes(width: int, height: int, bboxes: list[dict]) -> Imag
         if "bbox_2d" in bbox:
             # Scale bbox from 1000x1000 to actual image dimensions
             x1, y1, x2, y2 = scale_bbox(bbox["bbox_2d"], width, height)
-            # Draw white rectangle where watermark is
+            # Draw white rectangle where logo is
             draw.rectangle([x1, y1, x2, y2], fill="white")
 
     return mask
@@ -115,10 +115,10 @@ def ensure_dimensions_divisible_by_8(image: Image.Image) -> Image.Image:
     return image
 
 
-def remove_watermark_gray(
+def remove_logo_gray(
     image_path: Path, bboxes: list[dict], output_dir: Path
 ) -> Path:
-    """Remove watermark from an image by replacing with gray rectangles."""
+    """Remove logo from an image by replacing with gray rectangles."""
     # Load image with OpenCV
     image = cv2.imread(str(image_path))
     height, width = image.shape[:2]
@@ -138,10 +138,10 @@ def remove_watermark_gray(
     return output_path
 
 
-def remove_watermark_opencv(
+def remove_logo_opencv(
     image_path: Path, bboxes: list[dict], output_dir: Path
 ) -> Path:
-    """Remove watermark from an image using OpenCV inpainting."""
+    """Remove logo from an image using OpenCV inpainting."""
     # Load image with OpenCV
     image = cv2.imread(str(image_path))
     height, width = image.shape[:2]
@@ -152,7 +152,7 @@ def remove_watermark_opencv(
         if "bbox_2d" in bbox:
             # Scale bbox from 1000x1000 to actual image dimensions
             x1, y1, x2, y2 = scale_bbox(bbox["bbox_2d"], width, height)
-            # Draw white rectangle where watermark is
+            # Draw white rectangle where logo is
             cv2.rectangle(mask, (x1, y1), (x2, y2), 255, -1)
 
     # Run OpenCV inpainting (Telea method)
@@ -165,10 +165,10 @@ def remove_watermark_opencv(
     return output_path
 
 
-def remove_watermark_sdxl(
+def remove_logo_sdxl(
     pipe, image_path: Path, bboxes: list[dict], output_dir: Path, device: str
 ) -> Path:
-    """Remove watermark from an image using SDXL inpainting."""
+    """Remove logo from an image using SDXL inpainting."""
     # Load image
     image = Image.open(image_path).convert("RGB")
 
@@ -181,8 +181,8 @@ def remove_watermark_sdxl(
 
     # Run inpainting
     result = pipe(
-        prompt="clean background, no watermark, no text",
-        negative_prompt="watermark, logo, text, signature",
+        prompt="clean background, no logo, no text",
+        negative_prompt="logo, text, signature",
         image=image,
         mask_image=mask,
         num_inference_steps=20,
@@ -213,7 +213,7 @@ def main(
         help="Inpainting model to use (only for sdxl method)",
     ),
 ):
-    """Remove watermarks from images using inpainting.
+    """Remove logos from images using inpainting.
 
     Expects a JSON file where each entry has an 'output' field containing
     bounding boxes in the format:
@@ -252,7 +252,7 @@ def main(
             detection["bboxes"] = bboxes
             images_to_clean.append(detection)
 
-    print(f"Found {len(images_to_clean)} images with watermarks to remove", flush=True)
+    print(f"Found {len(images_to_clean)} images with logos to remove", flush=True)
 
     # Load model if using SDXL
     pipe = None
@@ -296,11 +296,11 @@ def main(
 
         try:
             if method == "gray":
-                output_path = remove_watermark_gray(image_path, bboxes, output_dir)
+                output_path = remove_logo_gray(image_path, bboxes, output_dir)
             elif method == "opencv":
-                output_path = remove_watermark_opencv(image_path, bboxes, output_dir)
+                output_path = remove_logo_opencv(image_path, bboxes, output_dir)
             else:
-                output_path = remove_watermark_sdxl(
+                output_path = remove_logo_sdxl(
                     pipe, image_path, bboxes, output_dir, device
                 )
             results.append(output_path)
