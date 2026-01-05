@@ -72,10 +72,8 @@ def main(
     if method == RemovalMethod.SDXL:
         remover = SDXLLogoRemover(model_name)
     elif method == RemovalMethod.OPENCV:
-        print(f"Using OpenCV inpainting method\n", flush=True)
         remover = OpenCVLogoRemover()
     else:
-        print(f"Using gray rectangle replacement method\n", flush=True)
         remover = GrayLogoRemover()
 
     # Process each image

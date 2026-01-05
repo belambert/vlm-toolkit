@@ -69,7 +69,6 @@ def test_gray_method(detections_json, tmp_path, temp_image):
     )
 
     assert result.exit_code == 0
-    assert "Using gray rectangle replacement method" in result.stdout
     assert "Loaded 1 detections" in result.stdout
     assert "Found 1 images with logos to remove" in result.stdout
     assert output_dir.exists()
@@ -85,7 +84,6 @@ def test_opencv_method(detections_json, tmp_path, temp_image):
     )
 
     assert result.exit_code == 0
-    assert "Using OpenCV inpainting method" in result.stdout
     assert "Loaded 1 detections" in result.stdout
     assert output_dir.exists()
     assert (output_dir / temp_image.name).exists()
