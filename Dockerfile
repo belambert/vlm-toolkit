@@ -29,13 +29,14 @@ ENV PATH="/root/.local/bin:$PATH"
 # Set working directory
 WORKDIR /app
 
-# Copy dependency files first (for better caching)
-COPY pyproject.toml uv.lock README.md ./
+# Copy only dependency files first (for better caching)
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies only (without the project itself)
 RUN uv sync --frozen --extra ml --no-install-project
 
-# Now copy source code
+# Now copy source code and other files
+COPY README.md ./
 COPY src/ ./src/
 COPY prompts/ ./prompts/
 
