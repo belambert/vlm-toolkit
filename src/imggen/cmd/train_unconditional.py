@@ -16,13 +16,13 @@ from tqdm.auto import tqdm
 import wandb
 
 # Training hyperparameters
-IMAGE_SIZE = 128
+IMAGE_SIZE = 256
 BATCH_SIZE = 16
-NUM_EPOCHS = 1000
+NUM_EPOCHS = 10000
 LEARNING_RATE = 1e-4
 LR_WARMUP_STEPS = 500
-SAVE_IMAGE_EPOCHS = 10
-SAVE_MODEL_EPOCHS = 100
+SAVE_IMAGE_EPOCHS = 100
+SAVE_MODEL_EPOCHS = 10000
 GRADIENT_ACCUMULATION_STEPS = 1
 MIXED_PRECISION = "fp16"
 USE_EMA = True
@@ -62,7 +62,26 @@ class ImageFolder(Dataset):
     def __init__(self, folder: Path, transform=None):
         self.folder = folder
         self.transform = transform
-        self.images = list(folder.glob("*.jpg")) + list(folder.glob("*.png"))
+
+        # Find all image files with common extensions
+        extensions = [
+            "*.jpg",
+            "*.jpeg",
+            "*.png",
+            "*.JPG",
+            "*.JPEG",
+            "*.PNG",
+            "*.webp",
+            "*.WEBP",
+        ]
+        self.images = []
+        for ext in extensions:
+            self.images.extend(folder.glob(ext))
+
+        if len(self.images) == 0:
+            raise ValueError(
+                f"No images found in {folder}. Looking for: {', '.join(extensions)}"
+            )
 
     def __len__(self):
         return len(self.images)
@@ -81,6 +100,20 @@ def main(
         "diffusion-model", help="Output directory for model checkpoints"
     ),
     num_epochs: int = typer.Option(NUM_EPOCHS, help="Number of training epochs"),
+    image_size: int = typer.Option(
+        IMAGE_SIZE, help="Image resolution (height and width)"
+    ),
+    batch_size: int = typer.Option(BATCH_SIZE, help="Batch size for training"),
+    learning_rate: float = typer.Option(LEARNING_RATE, help="Learning rate"),
+    save_image_epochs: int = typer.Option(
+        SAVE_IMAGE_EPOCHS, help="Save sample images every N epochs"
+    ),
+    save_model_epochs: int = typer.Option(
+        SAVE_MODEL_EPOCHS, help="Save model checkpoint every N epochs"
+    ),
+    gradient_accumulation_steps: int = typer.Option(
+        GRADIENT_ACCUMULATION_STEPS, help="Gradient accumulation steps"
+    ),
 ):
     """Train an unconditional diffusion model."""
     output_dir = Path(output_dir)
@@ -90,10 +123,13 @@ def main(
     wandb.init(
         project="diffusion-training",
         config={
-            "image_size": IMAGE_SIZE,
-            "batch_size": BATCH_SIZE,
+            "image_size": image_size,
+            "batch_size": batch_size,
             "num_epochs": num_epochs,
-            "learning_rate": LEARNING_RATE,
+            "learning_rate": learning_rate,
+            "save_image_epochs": save_image_epochs,
+            "save_model_epochs": save_model_epochs,
+            "gradient_accumulation_steps": gradient_accumulation_steps,
         },
     )
 
@@ -106,21 +142,23 @@ def main(
         device = torch.device("cpu")
     print(f"Using device: {device}")
 
-    # Create model
-    model = UNet2DModel(**MODEL_CONFIG)
+    # Create model with configured image size
+    model_config = MODEL_CONFIG.copy()
+    model_config["sample_size"] = image_size
+    model = UNet2DModel(**model_config)
     model = model.to(device)
 
     # Create noise scheduler
     noise_scheduler = DDPMScheduler(num_train_timesteps=1000)
 
     # Setup optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
     # Setup learning rate scheduler
     lr_scheduler = get_cosine_schedule_with_warmup(
         optimizer=optimizer,
         num_warmup_steps=LR_WARMUP_STEPS,
-        num_training_steps=(len(list(data_dir.glob("*.jpg"))) // BATCH_SIZE)
+        num_training_steps=(len(list(data_dir.glob("*.jpg"))) // batch_size)
         * num_epochs,
     )
 
@@ -131,7 +169,7 @@ def main(
     # Prepare dataset
     transform = transforms.Compose(
         [
-            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+            transforms.Resize((image_size, image_size)),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize([0.5], [0.5]),
@@ -140,7 +178,7 @@ def main(
 
     dataset = ImageFolder(data_dir, transform=transform)
     dataloader = DataLoader(
-        dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0  # 0 for MPS
+        dataset, batch_size=batch_size, shuffle=True, num_workers=0  # 0 for MPS
     )
 
     print(f"Training on {len(dataset)} images")
@@ -174,7 +212,7 @@ def main(
 
             loss.backward()
 
-            if (step + 1) % GRADIENT_ACCUMULATION_STEPS == 0:
+            if (step + 1) % gradient_accumulation_steps == 0:
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
@@ -193,7 +231,7 @@ def main(
         progress_bar.close()
 
         # Generate sample images
-        if (epoch + 1) % SAVE_IMAGE_EPOCHS == 0:
+        if (epoch + 1) % save_image_epochs == 0:
             model.eval()
 
             # Use EMA weights for generation if available
@@ -228,7 +266,7 @@ def main(
                 ema_model.restore(model.parameters())
 
         # Save checkpoint
-        if (epoch + 1) % SAVE_MODEL_EPOCHS == 0:
+        if (epoch + 1) % save_model_epochs == 0:
             if USE_EMA:
                 ema_model.store(model.parameters())
                 ema_model.copy_to(model.parameters())
