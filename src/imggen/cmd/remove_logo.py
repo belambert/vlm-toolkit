@@ -21,7 +21,7 @@ class RemovalMethod(str, Enum):
 
 @app.command()
 def main(
-    detections_json: Path = typer.Argument(
+    bboxes: Path = typer.Argument(
         ..., help="JSON file with bounding boxes (output from vlm-process)"
     ),
     output_dir: Path = typer.Argument(None, help="Output directory for cleaned images"),
@@ -45,15 +45,18 @@ def main(
     - sdxl: High-quality inpainting using Stable Diffusion XL (slower, better quality)
     """
 
-    if not detections_json.exists():
-        print(f"Error: {detections_json} does not exist", flush=True)
+    if not bboxes.exists():
+        print(f"Error: {bboxes} does not exist", flush=True)
         raise typer.Exit(1)
 
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    # Load detections
-    with open(detections_json) as f:
-        detections = json.load(f)
+    # Load detections from JSON lines file
+    detections = []
+    with open(bboxes) as f:
+        for line in f:
+            if line.strip():
+                detections.append(json.loads(line))
 
     print(f"Loaded {len(detections)} detections", flush=True)
 
@@ -84,17 +87,13 @@ def main(
         num_bboxes = len(bboxes)
 
         print(
-            f"Processing: {image_path.name} ({num_bboxes} bbox{'es' if num_bboxes > 1 else ''})...",
-            end="",
-            flush=True,
+            f"Processing: {image_path.name} ({num_bboxes} bbox)...", end="", flush=True
         )
 
         try:
-            # load
+
             image = Image.open(image_path).convert("RGB")
-            # process
             result = remover.remove(image, bboxes)
-            # save
             output_path = output_dir / f"{image_path.name}"
             result.save(output_path)
 

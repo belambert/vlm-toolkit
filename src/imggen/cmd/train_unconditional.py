@@ -177,8 +177,13 @@ def main(
     )
 
     dataset = ImageFolder(data_dir, transform=transform)
+
+    # Use multiple workers for CUDA to avoid data loading bottleneck
+    # MPS requires num_workers=0 due to multiprocessing issues
+    num_workers = 0 if device.type == "mps" else 8
+
     dataloader = DataLoader(
-        dataset, batch_size=batch_size, shuffle=True, num_workers=0  # 0 for MPS
+        dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
 
     print(f"Training on {len(dataset)} images")

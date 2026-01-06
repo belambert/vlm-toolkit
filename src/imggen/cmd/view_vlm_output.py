@@ -20,9 +20,12 @@ def main(
         print(f"Error: {input_json} does not exist", flush=True)
         raise typer.Exit(1)
 
-    # Load the JSON data
+    # Load the JSON lines data
+    data = []
     with open(input_json) as f:
-        data = json.load(f)
+        for line in f:
+            if line.strip():
+                data.append(json.loads(line))
 
     # Generate HTML
     html = """<!DOCTYPE html>

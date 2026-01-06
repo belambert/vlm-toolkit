@@ -39,32 +39,35 @@ def vlm_process(
     image_files = find_images(folder)
     device = get_device()
     model, processor = load_model(model_name, device)
-    results = []
-
-    # Process images in batches
-    total_batches = (len(image_files) + batch_size - 1) // batch_size
-    for i in range(0, len(image_files), batch_size):
-        batch = image_files[i : i + batch_size]
-        batch_num = i // batch_size + 1
-        print(
-            f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...",
-            flush=True,
-        )
-
-        try:
-            batch_results = process_batch(model, processor, batch, prompt, device)
-            results.extend(batch_results)
-        except Exception as e:
-            print(f"  Error processing batch: {e}, skipping...", flush=True)
 
     if output is None:
-        output = folder / "results.json"
+        output = folder / "results.jsonl"
 
+    # Open output file for writing (JSON lines format)
+    num_processed = 0
     with open(output, "w") as f:
-        json.dump(results, f, indent=2)
+        # Process images in batches
+        total_batches = (len(image_files) + batch_size - 1) // batch_size
+        for i in range(0, len(image_files), batch_size):
+            batch = image_files[i : i + batch_size]
+            batch_num = i // batch_size + 1
+            print(
+                f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...",
+                flush=True,
+            )
+
+            try:
+                batch_results = process_batch(model, processor, batch, prompt, device)
+                # Write each result as a JSON line
+                for result in batch_results:
+                    f.write(json.dumps(result) + "\n")
+                    num_processed += 1
+                f.flush()  # Ensure data is written after each batch
+            except Exception as e:
+                print(f"  Error processing batch: {e}, skipping...", flush=True)
 
     print(f"\nResults saved to: {output}", flush=True)
-    print(f"Processed: {len(results)}/{len(image_files)} images", flush=True)
+    print(f"Processed: {num_processed}/{len(image_files)} images", flush=True)
 
     return output
 
