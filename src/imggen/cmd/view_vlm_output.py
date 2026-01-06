@@ -1,6 +1,7 @@
 """Generate HTML visualization of VLM output."""
 
 import json
+import webbrowser
 from pathlib import Path
 
 import typer
@@ -99,6 +100,9 @@ def main(
     output_path.write_text(html)
 
     print(f"Generated {output_path}", flush=True)
+
+    # Open in default browser
+    webbrowser.open(f"file://{output_path.absolute()}")
 
 
 if __name__ == "__main__":
