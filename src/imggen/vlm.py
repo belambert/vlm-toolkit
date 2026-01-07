@@ -7,7 +7,13 @@ from transformers import AutoModelForImageTextToText, AutoProcessor
 from imggen.img_utils import resize_image_if_needed
 
 
-def prepare_vlm_batch(processor, image_paths: list[Path], prompt: str, device: str):
+def prepare_vlm_batch(
+    processor,
+    image_paths: list[Path],
+    prompt: str,
+    device: str,
+    max_dim: int | None = None,
+):
     """Prepare a batch of images for VLM inference.
 
     Args:
@@ -15,6 +21,7 @@ def prepare_vlm_batch(processor, image_paths: list[Path], prompt: str, device: s
         image_paths: List of paths to images
         prompt: The text prompt to use for each image
         device: Device to move tensors to
+        max_dim: Maximum dimension for image resizing (default: 1024)
 
     Returns:
         Processed inputs ready for model.generate()
@@ -23,7 +30,10 @@ def prepare_vlm_batch(processor, image_paths: list[Path], prompt: str, device: s
     all_messages = []
     for image_path in image_paths:
         image = Image.open(image_path)
-        image = resize_image_if_needed(image)
+        if max_dim is not None:
+            image = resize_image_if_needed(image, max_size=max_dim)
+        else:
+            image = resize_image_if_needed(image)
 
         messages = [
             {

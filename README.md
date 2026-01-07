@@ -1,5 +1,9 @@
 # imggen
 
+For vlm-process, we can resize the images before processing....
+It makes it harder to judge the focus, but maybe I can skip that...
+
+
 ## Prerequisites
 
     gem install mustache

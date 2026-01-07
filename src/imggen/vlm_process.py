@@ -12,8 +12,9 @@ def vlm_process(
     folder: Path,
     output: Path | None = None,
     prompt: str = DEFAULT_PROMPT,
-    model_name: str = "Qwen/Qwen3-VL-2B-Instruct",
+    model_name: str = "Qwen/Qwen3-VL-8B-Instruct",
     batch_size: int = 1,
+    max_dim: int | None = None,
 ) -> Path:
     """Process images using a Vision Language Model.
 
@@ -23,6 +24,7 @@ def vlm_process(
         prompt: Prompt for the VLM
         model_name: HuggingFace model name
         batch_size: Number of images to process in parallel
+        max_dim: Maximum dimension for image resizing (default: 1024)
 
     Returns:
         Path to the output JSON file
@@ -57,7 +59,9 @@ def vlm_process(
             )
 
             try:
-                batch_results = process_batch(model, processor, batch, prompt, device)
+                batch_results = process_batch(
+                    model, processor, batch, prompt, device, max_dim
+                )
                 # Write each result as a JSON line
                 for result in batch_results:
                     f.write(json.dumps(result) + "\n")
@@ -73,11 +77,16 @@ def vlm_process(
 
 
 def process_batch(
-    model, processor, image_paths: list[Path], prompt: str, device: str
+    model,
+    processor,
+    image_paths: list[Path],
+    prompt: str,
+    device: str,
+    max_dim: int | None,
 ) -> list[dict]:
     """Process a batch of images using a VLM."""
     # Prepare batch inputs
-    inputs = prepare_vlm_batch(processor, image_paths, prompt, device)
+    inputs = prepare_vlm_batch(processor, image_paths, prompt, device, max_dim)
 
     # Generate responses
     generated_ids = model.generate(**inputs, max_new_tokens=512)

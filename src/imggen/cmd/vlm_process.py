@@ -17,6 +17,9 @@ def main(
     ),
     model_name: str = typer.Option("Qwen/Qwen3-VL-2B-Instruct", help="HF model"),
     batch_size: int = typer.Option(8, help="Number of images to process in parallel"),
+    max_dim: int = typer.Option(
+        None, help="Maximum dimension for image resizing (default: 1024)"
+    ),
 ):
     """Process images using a Vision Language Model.
 
@@ -40,6 +43,7 @@ def main(
         prompt=prompt,
         model_name=model_name,
         batch_size=batch_size,
+        max_dim=max_dim,
     )
 
 
