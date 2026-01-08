@@ -118,6 +118,50 @@ def encode_prompt(text_encoders, tokenizers, prompt, device):
     return prompt_embeds, pooled_prompt_embeds
 
 
+def generate_validation_images(
+    unet, vae, enc1, enc2, tok1, tok2, noise_scheduler, dev, lora_config, learning_rate, global_step,
+):
+    """Generate validation images and return updated unet and optimizer."""
+    unet.eval()
+
+    # Merge LoRA weights for inference
+    unet = unet.merge_and_unload()
+
+    pipeline = StableDiffusionXLPipeline(
+        vae=vae,
+        text_encoder=enc1,
+        text_encoder_2=enc2,
+        tokenizer=tok1,
+        tokenizer_2=tok2,
+        unet=unet,
+        scheduler=noise_scheduler,
+    )
+    pipeline = pipeline.to(dev)
+
+    with torch.no_grad():
+        for i, prompt in enumerate(VALIDATION_PROMPTS):
+            images = pipeline(
+                prompt,
+                num_inference_steps=30,
+                guidance_scale=7.5,
+            ).images
+
+            wandb.log(
+                {f"validation_{i}": wandb.Image(images[0], caption=prompt)},
+                step=global_step,
+            )
+
+    # Unmerge LoRA weights to continue training
+    unet = get_peft_model(
+        UNet2DConditionModel.from_pretrained(MODEL_NAME, subfolder="unet").to(dev),
+        lora_config,
+    )
+    # Reload optimizer state
+    optimizer = torch.optim.AdamW(unet.parameters(), lr=learning_rate)
+
+    return unet, optimizer
+
+
 @app.command()
 def main(
     data_dir: Path = typer.Argument(..., help="Folder containing training images"),
@@ -304,44 +348,9 @@ def main(
 
         # Generate validation images
         if (epoch + 1) % SAVE_IMAGE_EPOCHS == 0:
-            unet.eval()
-
-            # Merge LoRA weights for inference
-            unet = unet.merge_and_unload()
-
-            pipeline = StableDiffusionXLPipeline(
-                vae=vae,
-                text_encoder=enc1,
-                text_encoder_2=enc2,
-                tokenizer=tok1,
-                tokenizer_2=tok2,
-                unet=unet,
-                scheduler=noise_scheduler,
+            unet, optimizer = generate_validation_images(
+                unet, vae, enc1, enc2, tok1, tok2, noise_scheduler, dev, lora_config, learning_rate, global_step
             )
-            pipeline = pipeline.to(dev)
-
-            with torch.no_grad():
-                for i, prompt in enumerate(VALIDATION_PROMPTS):
-                    images = pipeline(
-                        prompt,
-                        num_inference_steps=30,
-                        guidance_scale=7.5,
-                    ).images
-
-                    wandb.log(
-                        {f"validation_{i}": wandb.Image(images[0], caption=prompt)},
-                        step=global_step,
-                    )
-
-            # Unmerge LoRA weights to continue training
-            unet = get_peft_model(
-                UNet2DConditionModel.from_pretrained(MODEL_NAME, subfolder="unet").to(
-                    dev
-                ),
-                lora_config,
-            )
-            # Reload optimizer state
-            optimizer = torch.optim.AdamW(unet.parameters(), lr=learning_rate)
 
         # Save checkpoint
         if (epoch + 1) % SAVE_MODEL_EPOCHS == 0:
