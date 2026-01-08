@@ -42,6 +42,7 @@ caption-images = "imggen.cmd.caption_images:app"
 remove-logo = "imggen.cmd.remove_logo:app"
 view-vlm-output = "imggen.cmd.view_vlm_output:app"
 train-unconditional = "imggen.cmd.train_unconditional:app"
+train-lora-sdxl = "imggen.cmd.train_lora_sdxl:app"
 
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]
