@@ -28,7 +28,7 @@ BATCH_SIZE = 1
 NUM_EPOCHS = 100
 LEARNING_RATE = 1e-4
 LR_WARMUP_STEPS = 500
-SAVE_IMAGE_EPOCHS = 10
+SAVE_IMAGE_EPOCHS = 1
 SAVE_MODEL_EPOCHS = 50
 GRADIENT_ACCUMULATION_STEPS = 1
 
@@ -42,9 +42,9 @@ MODEL_NAME = "stabilityai/stable-diffusion-xl-base-1.0"
 
 # Validation prompts
 VALIDATION_PROMPTS = [
-    "A photo of a cat",
-    "A beautiful landscape",
-    "A portrait of a person",
+    "sassafras albidum",
+    "eryngium yuccifolium",
+    "carya tomentosa",
 ]
 
 app = typer.Typer()
@@ -67,6 +67,9 @@ class ImageCaptionDataset(Dataset):
             raise ValueError(
                 f"No images found in {folder}. Looking for: {', '.join(extensions)}"
             )
+
+        self.images = self.images[:100]
+        print([x.name for x in self.images])
 
         # Load captions from txt files with same name as images
         self.captions = []
