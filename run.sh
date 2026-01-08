@@ -12,8 +12,8 @@ export IMAGE_URI="us-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${I
 # Optional Configuration
 export REGION="us-central1"
 # export GPU_TYPE="nvidia-l4"      # or nvidia-tesla-a100, nvidia-tesla-t4, etc.
-export GPU_TYPE="nvidia-tesla-t4"
-export GPU_COUNT=1
+# export GPU_TYPE="nvidia-tesla-t4"
+# export GPU_COUNT=1
 
 # Source the library from the submodule
 source "gcp-batch/lib/gcp_batch.sh"
