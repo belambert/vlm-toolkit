@@ -5,7 +5,12 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 import typer
-from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionXLPipeline, UNet2DConditionModel
+from diffusers import (
+    AutoencoderKL,
+    DDPMScheduler,
+    StableDiffusionXLPipeline,
+    UNet2DConditionModel,
+)
 from diffusers.optimization import get_cosine_schedule_with_warmup
 from peft import LoraConfig, get_peft_model
 from PIL import Image
@@ -17,8 +22,9 @@ from transformers import AutoTokenizer, CLIPTextModel, CLIPTextModelWithProjecti
 import wandb
 
 # Training hyperparameters
-IMAGE_SIZE = 1024
-BATCH_SIZE = 4
+# IMAGE_SIZE = 1024
+IMAGE_SIZE = 512
+BATCH_SIZE = 1
 NUM_EPOCHS = 100
 LEARNING_RATE = 1e-4
 LR_WARMUP_STEPS = 500
@@ -145,38 +151,36 @@ def main(
 
     # Setup device
     if torch.cuda.is_available():
-        device = torch.device("cuda")
+        dev = torch.device("cuda")
     elif torch.backends.mps.is_available():
-        device = torch.device("mps")
+        dev = torch.device("mps")
     else:
-        device = torch.device("cpu")
-    print(f"Using device: {device}")
+        dev = torch.device("cpu")
+    print(f"Using device: {dev}")
 
     # Load tokenizers and text encoders
-    tokenizer_1 = AutoTokenizer.from_pretrained(
+    tok1 = AutoTokenizer.from_pretrained(
         MODEL_NAME, subfolder="tokenizer", use_fast=False
     )
-    tokenizer_2 = AutoTokenizer.from_pretrained(
+    tok2 = AutoTokenizer.from_pretrained(
         MODEL_NAME, subfolder="tokenizer_2", use_fast=False
     )
 
-    text_encoder_1 = CLIPTextModel.from_pretrained(
-        MODEL_NAME, subfolder="text_encoder"
-    ).to(device)
-    text_encoder_2 = CLIPTextModelWithProjection.from_pretrained(
+    enc1 = CLIPTextModel.from_pretrained(MODEL_NAME, subfolder="text_encoder").to(dev)
+    enc2 = CLIPTextModelWithProjection.from_pretrained(
         MODEL_NAME, subfolder="text_encoder_2"
-    ).to(device)
+    ).to(dev)
 
     # Freeze text encoders
-    text_encoder_1.requires_grad_(False)
-    text_encoder_2.requires_grad_(False)
+    enc1.requires_grad_(False)
+    enc2.requires_grad_(False)
 
     # Load VAE
-    vae = AutoencoderKL.from_pretrained(MODEL_NAME, subfolder="vae").to(device)
+    vae = AutoencoderKL.from_pretrained(MODEL_NAME, subfolder="vae").to(dev)
     vae.requires_grad_(False)
 
     # Load UNet and add LoRA layers
-    unet = UNet2DConditionModel.from_pretrained(MODEL_NAME, subfolder="unet").to(device)
+    unet = UNet2DConditionModel.from_pretrained(MODEL_NAME, subfolder="unet").to(dev)
 
     # Configure LoRA
     lora_config = LoraConfig(
@@ -207,7 +211,7 @@ def main(
     dataset = ImageCaptionDataset(data_dir, transform=transform)
 
     # Use multiple workers for CUDA, 0 for MPS
-    num_workers = 0 if device.type == "mps" else 4
+    num_workers = 0 if dev.type == "mps" else 4
 
     dataloader = DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
@@ -229,7 +233,7 @@ def main(
         progress_bar = tqdm(total=len(dataloader), desc=f"Epoch {epoch}")
 
         for step, batch in enumerate(dataloader):
-            images = batch["images"].to(device)
+            images = batch["images"].to(dev)
             captions = batch["captions"]
 
             # Encode images to latent space
@@ -243,7 +247,7 @@ def main(
 
             # Sample random timesteps
             timesteps = torch.randint(
-                0, noise_scheduler.config.num_train_timesteps, (bs,), device=device
+                0, noise_scheduler.config.num_train_timesteps, (bs,), device=dev
             ).long()
 
             # Add noise to latents
@@ -252,16 +256,18 @@ def main(
             # Encode prompts
             with torch.no_grad():
                 prompt_embeds, pooled_prompt_embeds = encode_prompt(
-                    [text_encoder_1, text_encoder_2],
-                    [tokenizer_1, tokenizer_2],
+                    [enc1, enc2],
+                    [tok1, tok2],
                     captions,
-                    device,
+                    dev,
                 )
 
             # Add time embeddings
-            add_time_ids = torch.tensor(
-                [[IMAGE_SIZE, IMAGE_SIZE, 0, 0, IMAGE_SIZE, IMAGE_SIZE]]
-            ).repeat(bs, 1).to(device)
+            add_time_ids = (
+                torch.tensor([[IMAGE_SIZE, IMAGE_SIZE, 0, 0, IMAGE_SIZE, IMAGE_SIZE]])
+                .repeat(bs, 1)
+                .to(dev)
+            )
 
             # Prepare added conditioning
             added_cond_kwargs = {
@@ -305,14 +311,14 @@ def main(
 
             pipeline = StableDiffusionXLPipeline(
                 vae=vae,
-                text_encoder=text_encoder_1,
-                text_encoder_2=text_encoder_2,
-                tokenizer=tokenizer_1,
-                tokenizer_2=tokenizer_2,
+                text_encoder=enc1,
+                text_encoder_2=enc2,
+                tokenizer=tok1,
+                tokenizer_2=tok2,
                 unet=unet,
                 scheduler=noise_scheduler,
             )
-            pipeline = pipeline.to(device)
+            pipeline = pipeline.to(dev)
 
             with torch.no_grad():
                 for i, prompt in enumerate(VALIDATION_PROMPTS):
@@ -329,9 +335,9 @@ def main(
 
             # Unmerge LoRA weights to continue training
             unet = get_peft_model(
-                UNet2DConditionModel.from_pretrained(
-                    MODEL_NAME, subfolder="unet"
-                ).to(device),
+                UNet2DConditionModel.from_pretrained(MODEL_NAME, subfolder="unet").to(
+                    dev
+                ),
                 lora_config,
             )
             # Reload optimizer state
