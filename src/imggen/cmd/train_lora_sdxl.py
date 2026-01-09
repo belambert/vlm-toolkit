@@ -122,7 +122,17 @@ def encode_prompt(text_encoders, tokenizers, prompt, device):
 
 
 def generate_validation_images(
-    unet, vae, enc1, enc2, tok1, tok2, noise_scheduler, dev, lora_config, learning_rate, global_step,
+    unet,
+    vae,
+    enc1,
+    enc2,
+    tok1,
+    tok2,
+    noise_scheduler,
+    dev,
+    lora_config,
+    learning_rate,
+    global_step,
 ):
     """Generate validation images and return updated unet and optimizer."""
     unet.eval()
@@ -352,7 +362,17 @@ def main(
         # Generate validation images
         if (epoch + 1) % SAVE_IMAGE_EPOCHS == 0:
             unet, optimizer = generate_validation_images(
-                unet, vae, enc1, enc2, tok1, tok2, noise_scheduler, dev, lora_config, learning_rate, global_step
+                unet,
+                vae,
+                enc1,
+                enc2,
+                tok1,
+                tok2,
+                noise_scheduler,
+                dev,
+                lora_config,
+                learning_rate,
+                global_step,
             )
 
         # Save checkpoint
