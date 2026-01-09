@@ -90,7 +90,9 @@ class ImageCaptionDataset(Dataset):
         return {"images": image, "captions": self.captions[idx]}
 
 
-def encode_prompt(text_encoder, text_encoder_2, tokenizer, tokenizer_2, prompt, dev):
+def encode_prompt(
+    text_encoder, text_encoder_2, tokenizer, tokenizer_2, prompt, dev, dtype
+):
     """Encode text prompt with CLIP and T5."""
     # CLIP encoding
     text_inputs = tokenizer(
@@ -103,7 +105,7 @@ def encode_prompt(text_encoder, text_encoder_2, tokenizer, tokenizer_2, prompt, 
     prompt_embeds = text_encoder(
         text_inputs.input_ids.to(dev), output_hidden_states=False
     )
-    pooled_prompt_embeds = prompt_embeds.pooler_output
+    pooled_prompt_embeds = prompt_embeds.pooler_output.to(dtype)
 
     # T5 encoding
     text_inputs_2 = tokenizer_2(
@@ -113,7 +115,7 @@ def encode_prompt(text_encoder, text_encoder_2, tokenizer, tokenizer_2, prompt, 
         truncation=True,
         return_tensors="pt",
     )
-    prompt_embeds_2 = text_encoder_2(text_inputs_2.input_ids.to(dev))[0]
+    prompt_embeds_2 = text_encoder_2(text_inputs_2.input_ids.to(dev))[0].to(dtype)
 
     return prompt_embeds_2, pooled_prompt_embeds
 
@@ -127,6 +129,7 @@ def generate_validation_images(
     tokenizer_2,
     scheduler,
     dev,
+    dtype,
     lora_config,
     learning_rate,
     global_step,
@@ -167,7 +170,7 @@ def generate_validation_images(
     # Unmerge LoRA weights to continue training
     transformer = get_peft_model(
         FluxTransformer2DModel.from_pretrained(
-            MODEL_NAME, subfolder="transformer", torch_dtype=torch.bfloat16
+            MODEL_NAME, subfolder="transformer", torch_dtype=dtype
         ).to(dev),
         lora_config,
     )
@@ -222,21 +225,24 @@ def main(
     # Setup device
     if torch.cuda.is_available():
         dev = torch.device("cuda")
+        dtype = torch.bfloat16
     elif torch.backends.mps.is_available():
         dev = torch.device("mps")
+        dtype = torch.float32  # MPS has issues with bfloat16
     else:
         dev = torch.device("cpu")
-    print(f"Using device: {dev}")
+        dtype = torch.float32
+    print(f"Using device: {dev}, dtype: {dtype}")
 
     # Load tokenizers and text encoders
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, subfolder="tokenizer")
     tokenizer_2 = AutoTokenizer.from_pretrained(MODEL_NAME, subfolder="tokenizer_2")
 
     text_encoder = CLIPTextModel.from_pretrained(
-        MODEL_NAME, subfolder="text_encoder", torch_dtype=torch.bfloat16
+        MODEL_NAME, subfolder="text_encoder", torch_dtype=dtype
     ).to(dev)
     text_encoder_2 = T5EncoderModel.from_pretrained(
-        MODEL_NAME, subfolder="text_encoder_2", torch_dtype=torch.bfloat16
+        MODEL_NAME, subfolder="text_encoder_2", torch_dtype=dtype
     ).to(dev)
 
     # Freeze text encoders
@@ -245,13 +251,13 @@ def main(
 
     # Load VAE
     vae = AutoencoderKL.from_pretrained(
-        MODEL_NAME, subfolder="vae", torch_dtype=torch.bfloat16
+        MODEL_NAME, subfolder="vae", torch_dtype=dtype
     ).to(dev)
     vae.requires_grad_(False)
 
     # Load transformer and add LoRA layers
     transformer = FluxTransformer2DModel.from_pretrained(
-        MODEL_NAME, subfolder="transformer", torch_dtype=torch.bfloat16
+        MODEL_NAME, subfolder="transformer", torch_dtype=dtype
     ).to(dev)
 
     # Configure LoRA
@@ -307,25 +313,33 @@ def main(
         progress_bar = tqdm(total=len(dataloader), desc=f"Epoch {epoch}")
 
         for step, batch in enumerate(dataloader):
-            images = batch["images"].to(dev)
+            images = batch["images"].to(dev, dtype=dtype)
             captions = batch["captions"]
 
             # Encode images to latent space
             with torch.no_grad():
                 latents = vae.encode(images).latent_dist.sample()
-                latents = latents * vae.config.scaling_factor
+                latents = (
+                    latents - vae.config.shift_factor
+                ) * vae.config.scaling_factor
+
+                # Pack latents for FLUX transformer (B, C, H, W) -> (B, H*W/4, C*4)
+                bs, c, h, w = latents.shape
+                latents = latents.permute(0, 2, 3, 1).reshape(
+                    bs, (h // 2) * (w // 2), c * 4
+                )
 
             # Sample noise
             noise = torch.randn_like(latents)
             bs = latents.shape[0]
 
             # Sample random timesteps (FLUX uses continuous time)
-            timesteps = torch.rand((bs,), device=dev)
+            timesteps = torch.rand((bs,), device=dev, dtype=dtype)
 
             # Add noise using flow matching
-            noisy_latents = (
-                1 - timesteps.view(-1, 1, 1, 1)
-            ) * latents + timesteps.view(-1, 1, 1, 1) * noise
+            noisy_latents = (1 - timesteps.view(-1, 1, 1)) * latents + timesteps.view(
+                -1, 1, 1
+            ) * noise
 
             # Encode prompts
             with torch.no_grad():
@@ -336,14 +350,37 @@ def main(
                     tokenizer_2,
                     captions,
                     dev,
+                    dtype,
                 )
+
+            # Create position IDs for rotary embeddings
+            latent_image_ids = torch.zeros(h // 2, w // 2, 3, device=dev, dtype=dtype)
+            latent_image_ids[..., 1] = (
+                latent_image_ids[..., 1]
+                + torch.arange(h // 2, device=dev, dtype=dtype)[:, None]
+            )
+            latent_image_ids[..., 2] = (
+                latent_image_ids[..., 2]
+                + torch.arange(w // 2, device=dev, dtype=dtype)[None, :]
+            )
+            latent_image_ids = latent_image_ids.reshape(-1, 3).repeat(bs, 1, 1)
+
+            txt_ids = torch.zeros(
+                bs, prompt_embeds.shape[1], 3, device=dev, dtype=dtype
+            )
+
+            # Create guidance embedding (for CFG, set to 3.5 which is a typical value)
+            guidance = torch.full((bs,), 3.5, device=dev, dtype=dtype)
 
             # Predict velocity
             model_output = transformer(
                 hidden_states=noisy_latents,
                 timestep=timesteps,
+                guidance=guidance,
                 encoder_hidden_states=prompt_embeds,
                 pooled_projections=pooled_prompt_embeds,
+                img_ids=latent_image_ids,
+                txt_ids=txt_ids,
                 return_dict=False,
             )[0]
 
@@ -378,6 +415,7 @@ def main(
                 tokenizer_2,
                 scheduler,
                 dev,
+                dtype,
                 lora_config,
                 learning_rate,
                 global_step,
