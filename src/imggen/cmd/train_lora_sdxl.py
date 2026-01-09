@@ -1,10 +1,12 @@
 """Train an SDXL LoRA adapter on a folder of images with captions."""
 
+import json
 from pathlib import Path
 
 import torch
 import torch.nn.functional as F
 import typer
+import yaml
 from diffusers import (
     AutoencoderKL,
     DDPMScheduler,
@@ -22,13 +24,12 @@ from transformers import AutoTokenizer, CLIPTextModel, CLIPTextModelWithProjecti
 import wandb
 
 # Training hyperparameters
-# IMAGE_SIZE = 1024
-IMAGE_SIZE = 512
+IMAGE_SIZE = 1024
 BATCH_SIZE = 1
 NUM_EPOCHS = 100
 LEARNING_RATE = 1e-4
 LR_WARMUP_STEPS = 500
-SAVE_IMAGE_EPOCHS = 1
+SAVE_IMAGE_EPOCHS = 10
 SAVE_MODEL_EPOCHS = 50
 GRADIENT_ACCUMULATION_STEPS = 1
 
@@ -53,33 +54,31 @@ app = typer.Typer()
 class ImageCaptionDataset(Dataset):
     """Dataset for images with text captions."""
 
-    def __init__(self, folder: Path, transform=None):
-        self.folder = folder
+    def __init__(self, caption_file: Path, transform=None):
         self.transform = transform
-
-        # Find all image files
-        extensions = ["*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG"]
         self.images = []
-        for ext in extensions:
-            self.images.extend(folder.glob(ext))
+        self.captions = []
+
+        # Get caption file directory for resolving relative paths
+        caption_dir = caption_file.parent
+
+        # Load from JSONL file
+        with open(caption_file) as f:
+            for line in f:
+                if line.strip():
+                    data = json.loads(line)
+                    img_path = Path(data["image_path"])
+                    # Resolve relative to caption file directory
+                    if not img_path.is_absolute():
+                        img_path = caption_dir / img_path
+                    if img_path.exists():
+                        self.images.append(img_path)
+                        self.captions.append(data["output"])
 
         if len(self.images) == 0:
-            raise ValueError(
-                f"No images found in {folder}. Looking for: {', '.join(extensions)}"
-            )
+            raise ValueError(f"No valid images found in {caption_file}")
 
-        self.images = self.images[:100]
-        print([x.name for x in self.images])
-
-        # Load captions from txt files with same name as images
-        self.captions = []
-        for img_path in self.images:
-            caption_path = img_path.with_suffix(".txt")
-            if caption_path.exists():
-                self.captions.append(caption_path.read_text().strip())
-            else:
-                # Use filename as caption if no txt file
-                self.captions.append(img_path.stem)
+        print(f"Loaded {len(self.images)} images from {caption_file}")
 
     def __len__(self):
         return len(self.images)
@@ -133,6 +132,7 @@ def generate_validation_images(
     lora_config,
     learning_rate,
     global_step,
+    validation_prompts,
 ):
     """Generate validation images and return updated unet and optimizer."""
     unet.eval()
@@ -152,7 +152,7 @@ def generate_validation_images(
     pipeline = pipeline.to(dev)
 
     with torch.no_grad():
-        for i, prompt in enumerate(VALIDATION_PROMPTS):
+        for i, prompt in enumerate(validation_prompts):
             images = pipeline(
                 prompt,
                 num_inference_steps=30,
@@ -177,9 +177,14 @@ def generate_validation_images(
 
 @app.command()
 def main(
-    data_dir: Path = typer.Argument(..., help="Folder containing training images"),
+    caption_file: Path = typer.Argument(
+        ..., help="JSONL file with image paths and captions"
+    ),
     output_dir: Path = typer.Option(
         "sdxl-lora", help="Output directory for LoRA checkpoints"
+    ),
+    validation_prompts_file: Path = typer.Option(
+        None, help="YAML file with validation prompts"
     ),
     num_epochs: int = typer.Option(NUM_EPOCHS, help="Number of training epochs"),
     batch_size: int = typer.Option(BATCH_SIZE, help="Batch size for training"),
@@ -187,11 +192,17 @@ def main(
 ):
     """Train an SDXL LoRA adapter.
 
-    Expects images with corresponding .txt files containing captions.
-    If no .txt file exists, the filename will be used as the caption.
+    Expects a JSONL file with entries containing 'image_path' and 'output' (caption) fields.
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True, parents=True)
+
+    # Load validation prompts
+    if validation_prompts_file is not None:
+        with open(validation_prompts_file) as f:
+            validation_prompts = yaml.safe_load(f)
+    else:
+        validation_prompts = VALIDATION_PROMPTS
 
     # Initialize wandb
     wandb.init(
@@ -265,7 +276,7 @@ def main(
         ]
     )
 
-    dataset = ImageCaptionDataset(data_dir, transform=transform)
+    dataset = ImageCaptionDataset(caption_file, transform=transform)
 
     # Use multiple workers for CUDA, 0 for MPS
     num_workers = 0 if dev.type == "mps" else 4
@@ -373,6 +384,7 @@ def main(
                 lora_config,
                 learning_rate,
                 global_step,
+                validation_prompts,
             )
 
         # Save checkpoint
