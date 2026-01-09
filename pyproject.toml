@@ -24,6 +24,7 @@ ml = [
     "ftfy>=6.3.1",
     "peft>=0.18.0",
     "protobuf>=6.33.2",
+    "pyyaml>=6.0.2",
     "qwen-vl-utils>=0.0.14",
     "sentencepiece>=0.2.1",
     "torchvision>=0.24.1",
@@ -43,6 +44,8 @@ remove-logo = "imggen.cmd.remove_logo:app"
 view-vlm-output = "imggen.cmd.view_vlm_output:app"
 train-unconditional = "imggen.cmd.train_unconditional:app"
 train-lora-sdxl = "imggen.cmd.train_lora_sdxl:app"
+train-lora-flux1 = "imggen.cmd.train_lora_flux1:app"
+batch-gen = "imggen.cmd.batch_gen:app"
 
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]

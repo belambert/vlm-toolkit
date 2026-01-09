@@ -1,4 +1,4 @@
-"""Train an SDXL LoRA adapter on a folder of images with captions."""
+"""Train a FLUX.1 LoRA adapter on images with captions."""
 
 import json
 from pathlib import Path
@@ -9,9 +9,9 @@ import typer
 import yaml
 from diffusers import (
     AutoencoderKL,
-    DDPMScheduler,
-    StableDiffusionXLPipeline,
-    UNet2DConditionModel,
+    FlowMatchEulerDiscreteScheduler,
+    FluxPipeline,
+    FluxTransformer2DModel,
 )
 from diffusers.optimization import get_cosine_schedule_with_warmup
 from peft import LoraConfig, get_peft_model
@@ -19,33 +19,33 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
-from transformers import AutoTokenizer, CLIPTextModel, CLIPTextModelWithProjection
+from transformers import AutoTokenizer, CLIPTextModel, T5EncoderModel
 
 import wandb
 
 # Training hyperparameters
 IMAGE_SIZE = 1024
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 NUM_EPOCHS = 10
-LEARNING_RATE = 5e-5
+LEARNING_RATE = 1e-4
 LR_WARMUP_STEPS = 500
 SAVE_IMAGE_EPOCHS = 2
 SAVE_MODEL_EPOCHS = 50
 GRADIENT_ACCUMULATION_STEPS = 1
 
 # LoRA configuration
-LORA_RANK = 32
+LORA_RANK = 16
 LORA_ALPHA = 16
 LORA_DROPOUT = 0.0
 
 # Model names
-MODEL_NAME = "stabilityai/stable-diffusion-xl-base-1.0"
+MODEL_NAME = "black-forest-labs/FLUX.1-dev"
 
 # Validation prompts
 VALIDATION_PROMPTS = [
-    "sassafras albidum",
-    "eryngium yuccifolium",
-    "carya tomentosa",
+    "a beautiful landscape",
+    "a portrait of a person",
+    "an abstract painting",
 ]
 
 app = typer.Typer()
@@ -90,64 +90,62 @@ class ImageCaptionDataset(Dataset):
         return {"images": image, "captions": self.captions[idx]}
 
 
-def encode_prompt(text_encoders, tokenizers, prompt, device):
-    """Encode text prompt with both CLIP text encoders."""
-    prompt_embeds_list = []
+def encode_prompt(text_encoder, text_encoder_2, tokenizer, tokenizer_2, prompt, dev):
+    """Encode text prompt with CLIP and T5."""
+    # CLIP encoding
+    text_inputs = tokenizer(
+        prompt,
+        padding="max_length",
+        max_length=77,
+        truncation=True,
+        return_tensors="pt",
+    )
+    prompt_embeds = text_encoder(
+        text_inputs.input_ids.to(dev), output_hidden_states=False
+    )
+    pooled_prompt_embeds = prompt_embeds.pooler_output
 
-    for text_encoder, tokenizer in zip(text_encoders, tokenizers):
-        text_inputs = tokenizer(
-            prompt,
-            padding="max_length",
-            max_length=tokenizer.model_max_length,
-            truncation=True,
-            return_tensors="pt",
-        )
-        text_input_ids = text_inputs.input_ids.to(device)
+    # T5 encoding
+    text_inputs_2 = tokenizer_2(
+        prompt,
+        padding="max_length",
+        max_length=512,
+        truncation=True,
+        return_tensors="pt",
+    )
+    prompt_embeds_2 = text_encoder_2(text_inputs_2.input_ids.to(dev))[0]
 
-        prompt_embeds = text_encoder(text_input_ids, output_hidden_states=True)
-
-        # Use pooled output for text_encoder_2
-        if len(prompt_embeds_list) == 1:
-            pooled_prompt_embeds = prompt_embeds.text_embeds
-        else:
-            pooled_prompt_embeds = None
-
-        # Use hidden states
-        prompt_embeds = prompt_embeds.hidden_states[-2]
-        prompt_embeds_list.append(prompt_embeds)
-
-    prompt_embeds = torch.concat(prompt_embeds_list, dim=-1)
-    return prompt_embeds, pooled_prompt_embeds
+    return prompt_embeds_2, pooled_prompt_embeds
 
 
 def generate_validation_images(
-    unet,
+    transformer,
     vae,
-    enc1,
-    enc2,
-    tok1,
-    tok2,
-    noise_scheduler,
+    text_encoder,
+    text_encoder_2,
+    tokenizer,
+    tokenizer_2,
+    scheduler,
     dev,
     lora_config,
     learning_rate,
     global_step,
     validation_prompts,
 ):
-    """Generate validation images and return updated unet and optimizer."""
-    unet.eval()
+    """Generate validation images and return updated transformer and optimizer."""
+    transformer.eval()
 
     # Merge LoRA weights for inference
-    unet = unet.merge_and_unload()
+    transformer = transformer.merge_and_unload()
 
-    pipeline = StableDiffusionXLPipeline(
+    pipeline = FluxPipeline(
         vae=vae,
-        text_encoder=enc1,
-        text_encoder_2=enc2,
-        tokenizer=tok1,
-        tokenizer_2=tok2,
-        unet=unet,
-        scheduler=noise_scheduler,
+        text_encoder=text_encoder,
+        text_encoder_2=text_encoder_2,
+        tokenizer=tokenizer,
+        tokenizer_2=tokenizer_2,
+        transformer=transformer,
+        scheduler=scheduler,
     )
     pipeline = pipeline.to(dev)
 
@@ -155,8 +153,10 @@ def generate_validation_images(
         for i, prompt in enumerate(validation_prompts):
             images = pipeline(
                 prompt,
-                num_inference_steps=30,
-                guidance_scale=7.5,
+                num_inference_steps=20,
+                guidance_scale=3.5,
+                height=IMAGE_SIZE,
+                width=IMAGE_SIZE,
             ).images
 
             wandb.log(
@@ -165,14 +165,16 @@ def generate_validation_images(
             )
 
     # Unmerge LoRA weights to continue training
-    unet = get_peft_model(
-        UNet2DConditionModel.from_pretrained(MODEL_NAME, subfolder="unet").to(dev),
+    transformer = get_peft_model(
+        FluxTransformer2DModel.from_pretrained(
+            MODEL_NAME, subfolder="transformer", torch_dtype=torch.bfloat16
+        ).to(dev),
         lora_config,
     )
     # Reload optimizer state
-    optimizer = torch.optim.AdamW(unet.parameters(), lr=learning_rate)
+    optimizer = torch.optim.AdamW(transformer.parameters(), lr=learning_rate)
 
-    return unet, optimizer
+    return transformer, optimizer
 
 
 @app.command()
@@ -181,7 +183,7 @@ def main(
         ..., help="JSONL file with image paths and captions"
     ),
     output_dir: Path = typer.Option(
-        "sdxl-lora", help="Output directory for LoRA checkpoints"
+        "flux1-lora", help="Output directory for LoRA checkpoints"
     ),
     validation_prompts_file: Path = typer.Option(
         None, help="YAML file with validation prompts"
@@ -190,7 +192,7 @@ def main(
     batch_size: int = typer.Option(BATCH_SIZE, help="Batch size for training"),
     learning_rate: float = typer.Option(LEARNING_RATE, help="Learning rate"),
 ):
-    """Train an SDXL LoRA adapter.
+    """Train a FLUX.1 LoRA adapter.
 
     Expects a JSONL file with entries containing 'image_path' and 'output' (caption) fields.
     """
@@ -206,7 +208,7 @@ def main(
 
     # Initialize wandb
     wandb.init(
-        project="sdxl-lora-training-v2",
+        project="flux1-lora-training",
         config={
             "image_size": IMAGE_SIZE,
             "batch_size": batch_size,
@@ -227,28 +229,30 @@ def main(
     print(f"Using device: {dev}")
 
     # Load tokenizers and text encoders
-    tok1 = AutoTokenizer.from_pretrained(
-        MODEL_NAME, subfolder="tokenizer", use_fast=False
-    )
-    tok2 = AutoTokenizer.from_pretrained(
-        MODEL_NAME, subfolder="tokenizer_2", use_fast=False
-    )
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, subfolder="tokenizer")
+    tokenizer_2 = AutoTokenizer.from_pretrained(MODEL_NAME, subfolder="tokenizer_2")
 
-    enc1 = CLIPTextModel.from_pretrained(MODEL_NAME, subfolder="text_encoder").to(dev)
-    enc2 = CLIPTextModelWithProjection.from_pretrained(
-        MODEL_NAME, subfolder="text_encoder_2"
+    text_encoder = CLIPTextModel.from_pretrained(
+        MODEL_NAME, subfolder="text_encoder", torch_dtype=torch.bfloat16
+    ).to(dev)
+    text_encoder_2 = T5EncoderModel.from_pretrained(
+        MODEL_NAME, subfolder="text_encoder_2", torch_dtype=torch.bfloat16
     ).to(dev)
 
     # Freeze text encoders
-    enc1.requires_grad_(False)
-    enc2.requires_grad_(False)
+    text_encoder.requires_grad_(False)
+    text_encoder_2.requires_grad_(False)
 
     # Load VAE
-    vae = AutoencoderKL.from_pretrained(MODEL_NAME, subfolder="vae").to(dev)
+    vae = AutoencoderKL.from_pretrained(
+        MODEL_NAME, subfolder="vae", torch_dtype=torch.bfloat16
+    ).to(dev)
     vae.requires_grad_(False)
 
-    # Load UNet and add LoRA layers
-    unet = UNet2DConditionModel.from_pretrained(MODEL_NAME, subfolder="unet").to(dev)
+    # Load transformer and add LoRA layers
+    transformer = FluxTransformer2DModel.from_pretrained(
+        MODEL_NAME, subfolder="transformer", torch_dtype=torch.bfloat16
+    ).to(dev)
 
     # Configure LoRA
     lora_config = LoraConfig(
@@ -257,14 +261,16 @@ def main(
         target_modules=["to_q", "to_k", "to_v", "to_out.0"],
         lora_dropout=LORA_DROPOUT,
     )
-    unet = get_peft_model(unet, lora_config)
-    unet.print_trainable_parameters()
+    transformer = get_peft_model(transformer, lora_config)
+    transformer.print_trainable_parameters()
 
     # Create noise scheduler
-    noise_scheduler = DDPMScheduler.from_pretrained(MODEL_NAME, subfolder="scheduler")
+    scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(
+        MODEL_NAME, subfolder="scheduler"
+    )
 
     # Setup optimizer
-    optimizer = torch.optim.AdamW(unet.parameters(), lr=learning_rate)
+    optimizer = torch.optim.AdamW(transformer.parameters(), lr=learning_rate)
 
     # Prepare dataset
     transform = transforms.Compose(
@@ -297,7 +303,7 @@ def main(
     # Training loop
     global_step = 0
     for epoch in range(num_epochs):
-        unet.train()
+        transformer.train()
         progress_bar = tqdm(total=len(dataloader), desc=f"Epoch {epoch}")
 
         for step, batch in enumerate(dataloader):
@@ -313,46 +319,37 @@ def main(
             noise = torch.randn_like(latents)
             bs = latents.shape[0]
 
-            # Sample random timesteps
-            timesteps = torch.randint(
-                0, noise_scheduler.config.num_train_timesteps, (bs,), device=dev
-            ).long()
+            # Sample random timesteps (FLUX uses continuous time)
+            timesteps = torch.rand((bs,), device=dev)
 
-            # Add noise to latents
-            noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+            # Add noise using flow matching
+            noisy_latents = (
+                1 - timesteps.view(-1, 1, 1, 1)
+            ) * latents + timesteps.view(-1, 1, 1, 1) * noise
 
             # Encode prompts
             with torch.no_grad():
                 prompt_embeds, pooled_prompt_embeds = encode_prompt(
-                    [enc1, enc2],
-                    [tok1, tok2],
+                    text_encoder,
+                    text_encoder_2,
+                    tokenizer,
+                    tokenizer_2,
                     captions,
                     dev,
                 )
 
-            # Add time embeddings
-            add_time_ids = (
-                torch.tensor([[IMAGE_SIZE, IMAGE_SIZE, 0, 0, IMAGE_SIZE, IMAGE_SIZE]])
-                .repeat(bs, 1)
-                .to(dev)
-            )
+            # Predict velocity
+            model_output = transformer(
+                hidden_states=noisy_latents,
+                timestep=timesteps,
+                encoder_hidden_states=prompt_embeds,
+                pooled_projections=pooled_prompt_embeds,
+                return_dict=False,
+            )[0]
 
-            # Prepare added conditioning
-            added_cond_kwargs = {
-                "text_embeds": pooled_prompt_embeds,
-                "time_ids": add_time_ids,
-            }
-
-            # Predict noise
-            model_output = unet(
-                noisy_latents,
-                timesteps,
-                prompt_embeds,
-                added_cond_kwargs=added_cond_kwargs,
-            ).sample
-
-            # Calculate loss
-            loss = F.mse_loss(model_output, noise)
+            # Calculate flow matching loss (velocity prediction)
+            target = noise - latents
+            loss = F.mse_loss(model_output, target)
 
             loss.backward()
 
@@ -372,14 +369,14 @@ def main(
 
         # Generate validation images
         if (epoch + 1) % SAVE_IMAGE_EPOCHS == 0:
-            unet, optimizer = generate_validation_images(
-                unet,
+            transformer, optimizer = generate_validation_images(
+                transformer,
                 vae,
-                enc1,
-                enc2,
-                tok1,
-                tok2,
-                noise_scheduler,
+                text_encoder,
+                text_encoder_2,
+                tokenizer,
+                tokenizer_2,
+                scheduler,
                 dev,
                 lora_config,
                 learning_rate,
@@ -393,16 +390,16 @@ def main(
             checkpoint_dir.mkdir(exist_ok=True)
 
             # Save only LoRA weights
-            unet_lora = unet.merge_and_unload()
-            unet_lora.save_pretrained(checkpoint_dir)
+            transformer_lora = transformer.merge_and_unload()
+            transformer_lora.save_pretrained(checkpoint_dir)
 
             print(f"Saved checkpoint to {checkpoint_dir}")
 
     # Save final LoRA weights
     final_dir = output_dir / "final"
     final_dir.mkdir(exist_ok=True)
-    unet_final = unet.merge_and_unload()
-    unet_final.save_pretrained(final_dir)
+    transformer_final = transformer.merge_and_unload()
+    transformer_final.save_pretrained(final_dir)
     print(f"Training complete. Final model saved to {final_dir}")
 
     wandb.finish()
