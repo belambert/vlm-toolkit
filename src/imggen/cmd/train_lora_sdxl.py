@@ -206,7 +206,7 @@ def main(
 
     # Initialize wandb
     wandb.init(
-        project="sdxl-lora-training",
+        project="sdxl-lora-training-v2",
         config={
             "image_size": IMAGE_SIZE,
             "batch_size": batch_size,
