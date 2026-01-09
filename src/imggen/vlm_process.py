@@ -29,11 +29,12 @@ def vlm_process(
     Returns:
         Path to the output JSON file
 
-    Some good models to use:
+    Some models to use:
     - Qwen/Qwen3-VL-2B-Instruct
     - Qwen/Qwen3-VL-4B-Instruct
     - Qwen/Qwen3-VL-8B-Instruct
     - Qwen/Qwen3-VL-32B-Instruct
+    - Qwen/Qwen3-VL-30B-A3B-Instruct
 
     All of these have quantized versions, which can be specified by adding "-FP8" to
     the end of the name.

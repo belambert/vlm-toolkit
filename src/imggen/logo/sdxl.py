@@ -25,7 +25,7 @@ class SDXLLogoRemover(LogoRemover):
 
         self.pipe = AutoPipelineForInpainting.from_pretrained(
             model_name,
-            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+            torch_dtype=torch.bfloat16,
             safety_checker=None,
             requires_safety_checker=False,
         )
