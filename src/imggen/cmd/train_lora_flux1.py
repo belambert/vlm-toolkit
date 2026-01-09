@@ -363,11 +363,9 @@ def main(
                 latent_image_ids[..., 2]
                 + torch.arange(w // 2, device=dev, dtype=dtype)[None, :]
             )
-            latent_image_ids = latent_image_ids.reshape(-1, 3).repeat(bs, 1, 1)
+            latent_image_ids = latent_image_ids.reshape(-1, 3)
 
-            txt_ids = torch.zeros(
-                bs, prompt_embeds.shape[1], 3, device=dev, dtype=dtype
-            )
+            txt_ids = torch.zeros(prompt_embeds.shape[1], 3, device=dev, dtype=dtype)
 
             # Create guidance embedding (for CFG, set to 3.5 which is a typical value)
             guidance = torch.full((bs,), 3.5, device=dev, dtype=dtype)
