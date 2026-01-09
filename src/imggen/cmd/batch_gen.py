@@ -42,6 +42,7 @@ def main(
     """
     Suggested models:
     - stabilityai/stable-diffusion-xl-base-1.0
+    - black-forest-labs/FLUX.1-dev
     - black-forest-labs/FLUX.2-dev
 
     """

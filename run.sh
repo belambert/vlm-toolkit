@@ -15,7 +15,7 @@ export REGION="us-central1"
 # export GPU_TYPE="nvidia-tesla-t4"
 # export GPU_TYPE="nvidia-tesla-a100"
 export GPU_TYPE="nvidia-a100-80gb"
-
+export BOOT_DISK_SIZE=200
 export GPU_COUNT=1
 
 BUCKET=imggen
