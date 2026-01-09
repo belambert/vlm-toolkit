@@ -3,6 +3,7 @@ from pathlib import Path
 
 import torch
 import typer
+import yaml
 from diffusers import DiffusionPipeline
 
 from imggen.util import get_device
@@ -10,9 +11,21 @@ from imggen.util import get_device
 app = typer.Typer()
 
 
+def load_prompts(prompts_file: Path) -> list[str]:
+    """Load prompts from JSON lines or YAML file."""
+    if prompts_file.suffix in [".yaml", ".yml"]:
+        with open(prompts_file) as f:
+            return yaml.safe_load(f)
+    else:
+        # JSON lines format
+        with open(prompts_file) as f:
+            lines = f.readlines()
+        return [json.loads(line)["prompt"] for line in lines]
+
+
 @app.command()
 def main(
-    prompts_file: Path = typer.Argument(..., help="JSON lines file with prompts"),
+    prompts_file: Path = typer.Argument(..., help="JSON lines or YAML file with prompts"),
     output_dir: Path = typer.Argument(..., help="Output directory"),
     model: str = typer.Option(
         "stabilityai/stable-diffusion-xl-base-1.0", help="Model to use for image generation"
@@ -30,11 +43,7 @@ def main(
     output_dir.mkdir(exist_ok=True, parents=True)
 
     # Load prompts
-    prompts = []
-    with open(prompts_file) as f:
-        lines = f.readlines()
-    prompts = [json.loads(line)["prompt"] for line in lines]
-
+    prompts = load_prompts(prompts_file)
     print(f"Loaded {len(prompts)} prompts", flush=True)
 
     # Load model
