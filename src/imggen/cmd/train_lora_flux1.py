@@ -31,7 +31,7 @@ LEARNING_RATE = 1e-4
 LR_WARMUP_STEPS = 500
 SAVE_IMAGE_EPOCHS = 2
 SAVE_MODEL_EPOCHS = 50
-GRADIENT_ACCUMULATION_STEPS = 1
+GRADIENT_ACCUMULATION_STEPS = 4  # Simulate larger batch size
 
 # LoRA configuration
 LORA_RANK = 16
@@ -248,17 +248,23 @@ def main(
     # Freeze text encoders
     text_encoder.requires_grad_(False)
     text_encoder_2.requires_grad_(False)
+    text_encoder.eval()
+    text_encoder_2.eval()
 
     # Load VAE
     vae = AutoencoderKL.from_pretrained(
         MODEL_NAME, subfolder="vae", torch_dtype=dtype
     ).to(dev)
     vae.requires_grad_(False)
+    vae.eval()
 
     # Load transformer and add LoRA layers
     transformer = FluxTransformer2DModel.from_pretrained(
         MODEL_NAME, subfolder="transformer", torch_dtype=dtype
     ).to(dev)
+
+    # Enable gradient checkpointing for memory efficiency
+    transformer.enable_gradient_checkpointing()
 
     # Configure LoRA
     lora_config = LoraConfig(
