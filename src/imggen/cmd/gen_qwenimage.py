@@ -161,7 +161,6 @@ def main(
                 hidden_states=latent_model_input,
                 timestep=timestep.repeat(latent_model_input.shape[0]),
                 encoder_hidden_states=prompt_embeds_input,
-                encoder_attention_mask=attention_mask_input,
                 return_dict=False,
             )[0]
 
