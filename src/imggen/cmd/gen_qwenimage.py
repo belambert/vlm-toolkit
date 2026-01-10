@@ -132,8 +132,9 @@ def main(
         dtype=dtype,
     )
 
-    # Set timesteps
-    scheduler.set_timesteps(num_inference_steps)
+    # Set timesteps with mu for dynamic shifting
+    mu = (packed_latent_height * packed_latent_width) / (128 * 128)
+    scheduler.set_timesteps(num_inference_steps, mu=mu)
 
     # Denoising loop
     print("Generating image...")
