@@ -24,4 +24,4 @@ BUCKET=imggen
 source "gcp-batch/lib/gcp_batch.sh"
 
 # Submit your command
-submit_batch_job $@
+submit_batch_job "$@"
