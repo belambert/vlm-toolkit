@@ -46,6 +46,10 @@ train-unconditional = "imggen.cmd.train_unconditional:app"
 train-lora-sdxl = "imggen.cmd.train_lora_sdxl:app"
 train-lora-flux1 = "imggen.cmd.train_lora_flux1:app"
 batch-gen = "imggen.cmd.batch_gen:app"
+gen-flux1 = "imggen.cmd.gen_flux1:app"
+gen-qwenimage = "imggen.cmd.gen_qwenimage:app"
+print-flux-model = "imggen.cmd.print_flux_model:app"
+print-t5-model = "imggen.cmd.print_t5_model:app"
 
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]

@@ -347,7 +347,7 @@ def main(
                 -1, 1, 1
             ) * noise
 
-            # Encode prompts
+            # the first return value is from T5
             with torch.no_grad():
                 prompt_embeds, pooled_prompt_embeds = encode_prompt(
                     text_encoder,
@@ -381,7 +381,9 @@ def main(
                 hidden_states=noisy_latents,
                 timestep=timesteps,
                 guidance=guidance,
+                # from T5 model:
                 encoder_hidden_states=prompt_embeds,
+                # from clip model:
                 pooled_projections=pooled_prompt_embeds,
                 img_ids=latent_image_ids,
                 txt_ids=txt_ids,
