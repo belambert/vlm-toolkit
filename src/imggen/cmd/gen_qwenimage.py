@@ -4,7 +4,11 @@ from pathlib import Path
 
 import torch
 import typer
-from diffusers import AutoencoderKLQwenImage, FlowMatchEulerDiscreteScheduler, QwenImageTransformer2DModel
+from diffusers import (
+    AutoencoderKLQwenImage,
+    FlowMatchEulerDiscreteScheduler,
+    QwenImageTransformer2DModel,
+)
 from PIL import Image
 from transformers import AutoTokenizer, Qwen2_5_VLForConditionalGeneration
 
@@ -50,9 +54,7 @@ def encode_prompt(text_encoder, tokenizer, prompt, dev, max_length=1024):
 def main(
     prompt: str = typer.Argument(..., help="Text prompt for image generation"),
     output: Path = typer.Option("output.png", help="Output image path"),
-    model: str = typer.Option(
-        "Qwen/Qwen-Image", help="Model to use for generation"
-    ),
+    model: str = typer.Option("Qwen/Qwen-Image", help="Model to use for generation"),
     num_inference_steps: int = typer.Option(28, help="Number of denoising steps"),
     guidance_scale: float = typer.Option(5.0, help="Guidance scale for CFG"),
     height: int = typer.Option(1024, help="Image height"),
@@ -105,9 +107,7 @@ def main(
 
     # Encode prompt
     print(f"Encoding prompt: {prompt}")
-    prompt_embeds, attention_mask = encode_prompt(
-        text_encoder, tokenizer, prompt, dev
-    )
+    prompt_embeds, attention_mask = encode_prompt(text_encoder, tokenizer, prompt, dev)
 
     # Encode unconditional prompt for CFG
     negative_prompt_embeds, negative_attention_mask = encode_prompt(
@@ -147,7 +147,9 @@ def main(
                 # Concatenate for CFG
                 latent_model_input = torch.cat([latents] * 2)
                 prompt_embeds_input = torch.cat([negative_prompt_embeds, prompt_embeds])
-                attention_mask_input = torch.cat([negative_attention_mask, attention_mask])
+                attention_mask_input = torch.cat(
+                    [negative_attention_mask, attention_mask]
+                )
             else:
                 latent_model_input = latents
                 prompt_embeds_input = prompt_embeds

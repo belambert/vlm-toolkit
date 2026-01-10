@@ -9,9 +9,7 @@ app = typer.Typer()
 
 @app.command()
 def main(
-    model: str = typer.Option(
-        "black-forest-labs/FLUX.1-dev", help="Model to load"
-    ),
+    model: str = typer.Option("black-forest-labs/FLUX.1-dev", help="Model to load"),
 ):
     """Load FLUX model and print architecture."""
     print(f"Loading {model}...")

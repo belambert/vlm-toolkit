@@ -4,7 +4,11 @@ from pathlib import Path
 
 import torch
 import typer
-from diffusers import AutoencoderKL, FlowMatchEulerDiscreteScheduler, FluxTransformer2DModel
+from diffusers import (
+    AutoencoderKL,
+    FlowMatchEulerDiscreteScheduler,
+    FluxTransformer2DModel,
+)
 from PIL import Image
 from transformers import AutoTokenizer, CLIPTextModel, T5EncoderModel
 
@@ -84,9 +88,9 @@ def main(
         model, subfolder="text_encoder_2", torch_dtype=dtype
     ).to(dev)
     print("loading vae")
-    vae = AutoencoderKL.from_pretrained(
-        model, subfolder="vae", torch_dtype=dtype
-    ).to(dev)
+    vae = AutoencoderKL.from_pretrained(model, subfolder="vae", torch_dtype=dtype).to(
+        dev
+    )
 
     print("loading vision transformer")
     # transformer = FluxTransformer2DModel.from_pretrained(
