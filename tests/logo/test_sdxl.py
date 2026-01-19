@@ -25,7 +25,9 @@ class TestSDXLLogoRemover:
     @pytest.fixture
     def remover(self, mock_pipeline):
         """Create a SDXLLogoRemover with mocked pipeline."""
-        with patch("imggen.logo.sdxl.AutoPipelineForInpainting.from_pretrained") as mock_from_pretrained:
+        with patch(
+            "imggen.logo.sdxl.AutoPipelineForInpainting.from_pretrained"
+        ) as mock_from_pretrained:
             with patch("imggen.logo.sdxl.get_device", return_value="cpu"):
                 mock_from_pretrained.return_value = mock_pipeline
                 remover = SDXLLogoRemover("mock-model")

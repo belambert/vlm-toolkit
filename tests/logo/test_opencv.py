@@ -54,7 +54,9 @@ class TestOpenCVLogoRemover:
         # OpenCV inpainting should blend with surrounding white pixels
         center_pixel = result_array[500, 500]
         # Check that it's been modified (not pure black anymore)
-        assert not (center_pixel[0] == 0 and center_pixel[1] == 0 and center_pixel[2] == 0)
+        assert not (
+            center_pixel[0] == 0 and center_pixel[1] == 0 and center_pixel[2] == 0
+        )
 
     def test_handles_multiple_bboxes(self):
         """Test that remove() handles multiple bboxes."""

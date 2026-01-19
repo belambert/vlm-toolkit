@@ -97,7 +97,9 @@ def main(
     text_encoder.eval()
 
     print("Loading VAE...")
-    vae = AutoencoderKLQwenImage.from_pretrained(model, subfolder="vae") #, dtype=dtype)
+    vae = AutoencoderKLQwenImage.from_pretrained(
+        model, subfolder="vae"
+    )  # , dtype=dtype)
     vae = vae.to(dev)
     vae.eval()
 
