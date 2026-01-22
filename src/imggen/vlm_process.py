@@ -37,6 +37,10 @@ def vlm_process(
     - Qwen/Qwen3-VL-8B-Instruct
     - Qwen/Qwen3-VL-32B-Instruct
     - Qwen/Qwen3-VL-30B-A3B-Instruct
+    - Qwen/Qwen2.5-VL-72B-Instruct
+    - Qwen/Qwen2.5-VL-72B-Instruct-AWQ
+    - meta-llama/Llama-3.2-11B-Vision-Instruct
+    - meta-llama/Llama-3.2-90B-Vision-Instruct
 
     All of these have quantized versions, which can be specified by adding "-FP8" to
     the end of the name.
