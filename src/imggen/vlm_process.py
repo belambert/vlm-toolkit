@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+from rich import print as rprint
+
 from imggen.img_utils import find_images
 from imggen.util import get_device
 from imggen.vlm import load_model, prepare_vlm_batch
@@ -59,17 +61,17 @@ def vlm_process(
                 flush=True,
             )
 
-            try:
-                batch_results = process_batch(
-                    model, processor, batch, prompt, device, max_dim
-                )
-                # Write each result as a JSON line
-                for result in batch_results:
-                    f.write(json.dumps(result) + "\n")
-                    num_processed += 1
-                f.flush()  # Ensure data is written after each batch
-            except Exception as e:
-                print(f"  Error processing batch: {e}, skipping...", flush=True)
+            # try:
+            batch_results = process_batch(
+                model, processor, batch, prompt, device, max_dim
+            )
+            # Write each result as a JSON line
+            for result in batch_results:
+                f.write(json.dumps(result) + "\n")
+                num_processed += 1
+            f.flush()  # Ensure data is written after each batch
+            # except Exception as e:
+            #     print(f"  Error processing batch: {e}, skipping...", flush=True)
 
     print(f"\nResults saved to: {output}", flush=True)
     print(f"Processed: {num_processed}/{len(image_files)} images", flush=True)
@@ -87,6 +89,7 @@ def process_batch(
 ) -> list[dict]:
     """Process a batch of images using a VLM."""
     # Prepare batch inputs
+    rprint(image_paths)
     inputs = prepare_vlm_batch(processor, image_paths, prompt, device, max_dim)
 
     # Generate responses
@@ -100,6 +103,7 @@ def process_batch(
         skip_special_tokens=True,
         clean_up_tokenization_spaces=False,
     )
+    rprint(responses)
 
     # Create results
     results = []
