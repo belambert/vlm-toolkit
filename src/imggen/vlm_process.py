@@ -43,7 +43,9 @@ def vlm_process(
     """
     image_files = find_images(folder)
     device = get_device()
+    print(device)
     model, processor = load_model(model_name, device)
+    print(model.device)
 
     if output is None:
         output = folder / "results.jsonl"
@@ -91,6 +93,7 @@ def process_batch(
     # Prepare batch inputs
     rprint(image_paths)
     inputs = prepare_vlm_batch(processor, image_paths, prompt, device, max_dim)
+    print(inputs["input_ids"].device)
 
     # Generate responses
     generated_ids = model.generate(**inputs, max_new_tokens=512)
