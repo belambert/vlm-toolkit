@@ -80,7 +80,7 @@ def prepare_vlm_batch(
 def load_model(model_name: str, device: str):
     """Load VLM and processor."""
     model = AutoModelForImageTextToText.from_pretrained(
-        model_name, device_map="auto"
+        model_name, device_map=device
     )
     model = model.to(dtype=torch.bfloat16)
     processor = AutoProcessor.from_pretrained(model_name)
