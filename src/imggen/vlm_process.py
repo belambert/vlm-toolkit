@@ -48,23 +48,51 @@ def vlm_process(
     """
     image_files = find_images(folder)
     device = get_device()
-    model, processor = load_model(model_name, device)
-    print(model.device)
 
     if output is None:
         output = folder / "results.jsonl"
 
-    # Open output file for writing (JSON lines format)
+    # Check for existing results and filter out already-processed images
+    processed_files = set()
+    if output.exists():
+        print(f"Found existing output file: {output}", flush=True)
+        with open(output, "r") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        result = json.loads(line)
+                        processed_files.add(result["file_name"])
+                    except (json.JSONDecodeError, KeyError):
+                        continue
+        print(f"Already processed: {len(processed_files)} images", flush=True)
+
+    # Filter out already-processed images
+    images_to_process = [img for img in image_files if str(img) not in processed_files]
+
+    if not images_to_process:
+        print("All images already processed!", flush=True)
+        return output
+
+    print(
+        f"Resuming: {len(images_to_process)} remaining of {len(image_files)} total",
+        flush=True,
+    )
+
+    model, processor = load_model(model_name, device)
+    print(model.device)
+
+    # Open output file in append mode to preserve existing results
     num_processed = 0
-    with open(output, "w") as f:
+    file_mode = "a" if output.exists() else "w"
+    with open(output, file_mode) as f:
         # Process images in batches
-        total_batches = (len(image_files) + batch_size - 1) // batch_size
+        total_batches = (len(images_to_process) + batch_size - 1) // batch_size
         print(
-            f"Processing {len(image_files):,} imgs in {total_batches:,} batches of size {batch_size}...",
+            f"Processing {len(images_to_process):,} imgs in {total_batches:,} batches of size {batch_size}...",
             flush=True,
         )
-        for i in tqdm(range(0, len(image_files), batch_size)):
-            batch = image_files[i : i + batch_size]
+        for i in tqdm(range(0, len(images_to_process), batch_size)):
+            batch = images_to_process[i : i + batch_size]
             batch_results = process_batch(
                 model, processor, batch, prompt, device, max_dim
             )
@@ -75,7 +103,11 @@ def vlm_process(
             f.flush()  # Ensure data is written after each batch
 
     print(f"\nResults saved to: {output}", flush=True)
-    print(f"Processed: {num_processed}/{len(image_files)} images", flush=True)
+    total_processed = len(processed_files) + num_processed
+    print(
+        f"Processed: {num_processed} new images ({total_processed}/{len(image_files)} total)",
+        flush=True,
+    )
 
     return output
 
