@@ -34,7 +34,7 @@ def main(
 
     # Set default output filename for detect-logo
     if output is None:
-        output = folder / "bbox_output.json"
+        output = folder / "logo_bbox_output.json"
 
     vlm_process(
         folder=folder,
