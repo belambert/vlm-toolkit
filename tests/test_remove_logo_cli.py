@@ -33,7 +33,8 @@ def detections_json(tmp_path, temp_image):
         }
     ]
     with open(json_path, "w") as f:
-        json.dump(detections, f)
+        for detection in detections:
+            f.write(json.dumps(detection) + "\n")
     return json_path
 
 
@@ -103,7 +104,8 @@ def test_filters_detections_without_bboxes(tmp_path, temp_image):
         },
     ]
     with open(json_path, "w") as f:
-        json.dump(detections, f)
+        for detection in detections:
+            f.write(json.dumps(detection) + "\n")
 
     output_dir = tmp_path / "output"
 
@@ -137,7 +139,8 @@ def test_handles_processing_error(tmp_path):
         }
     ]
     with open(json_path, "w") as f:
-        json.dump(detections, f)
+        for detection in detections:
+            f.write(json.dumps(detection) + "\n")
 
     output_dir = tmp_path / "output"
 
@@ -170,7 +173,8 @@ def test_multiple_images(tmp_path):
         },
     ]
     with open(json_path, "w") as f:
-        json.dump(detections, f)
+        for detection in detections:
+            f.write(json.dumps(detection) + "\n")
 
     output_dir = tmp_path / "output"
 
