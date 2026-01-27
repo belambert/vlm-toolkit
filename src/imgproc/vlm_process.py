@@ -70,7 +70,9 @@ def vlm_process(
         print(f"Already processed: {len(processed_files)} images", flush=True)
 
     # Filter out already-processed images
-    images_to_process = [img for img in image_files if str(img.resolve()) not in processed_files]
+    images_to_process = [
+        img for img in image_files if str(img.resolve()) not in processed_files
+    ]
 
     if not images_to_process:
         print("All images already processed!", flush=True)
