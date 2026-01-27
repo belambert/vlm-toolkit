@@ -6,12 +6,7 @@ import typer
 from PIL import Image
 
 from imgproc.bbox import parse_bboxes
-from imgproc.logo import (
-    GrayLogoRemover,
-    LogoRemover,
-    OpenCVLogoRemover,
-    SDXLLogoRemover,
-)
+from imgproc.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover
 
 app = typer.Typer()
 
@@ -21,7 +16,6 @@ class RemovalMethod(str, Enum):
 
     GRAY = "gray"
     OPENCV = "opencv"
-    SDXL = "sdxl"
 
 
 @app.command()
@@ -33,10 +27,6 @@ def main(
     method: RemovalMethod = typer.Option(
         RemovalMethod.OPENCV, help="Inpainting method"
     ),
-    model_name: str = typer.Option(
-        "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
-        help="Inpainting model to use (only for sdxl method)",
-    ),
 ):
     """Remove logos from images using inpainting.
 
@@ -47,12 +37,15 @@ def main(
     Methods:
     - gray: Replace with gray rectangles (instant, simple)
     - opencv: Fast, lightweight inpainting using OpenCV (recommended for simple cases)
-    - sdxl: High-quality inpainting using Stable Diffusion XL (slower, better quality)
     """
 
     if not bboxes.exists():
         print(f"Error: {bboxes} does not exist", flush=True)
         raise typer.Exit(1)
+
+    # default output directory to same location as input JSON
+    if output_dir is None:
+        output_dir = bboxes.parent / f"{bboxes.stem}_cleaned"
 
     output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -81,9 +74,7 @@ def main(
 
     # Create logo remover instance based on selected method
     remover: LogoRemover
-    if method == RemovalMethod.SDXL:
-        remover = SDXLLogoRemover(model_name)
-    elif method == RemovalMethod.OPENCV:
+    if method == RemovalMethod.OPENCV:
         remover = OpenCVLogoRemover()
     else:
         remover = GrayLogoRemover()
