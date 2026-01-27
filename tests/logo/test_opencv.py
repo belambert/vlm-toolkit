@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from imggen.logo import OpenCVLogoRemover
+from imgproc.logo import OpenCVLogoRemover
 
 
 class TestOpenCVLogoRemover:

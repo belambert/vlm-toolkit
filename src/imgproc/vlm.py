@@ -5,7 +5,7 @@ from PIL import Image
 from qwen_vl_utils import process_vision_info
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
-from imggen.img_utils import resize_image_if_needed
+from imgproc.img_utils import resize_image_if_needed
 
 
 def prepare_vlm_batch(

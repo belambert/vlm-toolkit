@@ -5,8 +5,8 @@ from pathlib import Path
 import typer
 from PIL import Image
 
-from imggen.bbox import parse_bboxes
-from imggen.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover, SDXLLogoRemover
+from imgproc.bbox import parse_bboxes
+from imgproc.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover, SDXLLogoRemover
 
 app = typer.Typer()
 

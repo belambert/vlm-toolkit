@@ -4,9 +4,9 @@ from pathlib import Path
 from rich import print as rprint
 from tqdm import tqdm
 
-from imggen.img_utils import find_images
-from imggen.util import get_device
-from imggen.vlm import load_model, prepare_vlm_batch
+from imgproc.img_utils import find_images
+from imgproc.util import get_device
+from imgproc.vlm import load_model, prepare_vlm_batch
 
 DEFAULT_PROMPT = "Describe this image."
 

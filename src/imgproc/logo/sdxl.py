@@ -4,10 +4,10 @@ import torch
 from diffusers import AutoPipelineForInpainting
 from PIL import Image
 
-from imggen.bbox import create_mask_from_bboxes
-from imggen.img_utils import ensure_dimensions_divisible_by_8
-from imggen.logo.base import LogoRemover
-from imggen.util import get_device
+from imgproc.bbox import create_mask_from_bboxes
+from imgproc.img_utils import ensure_dimensions_divisible_by_8
+from imgproc.logo.base import LogoRemover
+from imgproc.util import get_device
 
 
 class SDXLLogoRemover(LogoRemover):

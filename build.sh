@@ -4,10 +4,10 @@ set -e
 # Configuration - update these for your project
 PROJECT_ID="${GCP_PROJECT_ID:-llm-exp-405305}"
 REGION="${GCP_REGION:-us}"
-IMAGE_NAME="imggen"
+IMAGE_NAME="imgproc"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
-IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/imggen/${IMAGE_NAME}:${IMAGE_TAG}"
+IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/imgproc/${IMAGE_NAME}:${IMAGE_TAG}"
 
 echo "Building Docker image..."
 docker build --platform linux/amd64 -t "${IMAGE_NAME}:${IMAGE_TAG}" .

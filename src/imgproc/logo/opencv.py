@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from imggen.bbox import scale_bbox
-from imggen.logo.base import LogoRemover
+from imgproc.bbox import scale_bbox
+from imgproc.logo.base import LogoRemover
 
 
 class OpenCVLogoRemover(LogoRemover):

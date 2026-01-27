@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from imggen.logo import GrayLogoRemover
+from imgproc.logo import GrayLogoRemover
 
 
 class TestGrayLogoRemover:

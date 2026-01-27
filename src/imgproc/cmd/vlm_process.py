@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from imggen.vlm_process import DEFAULT_PROMPT, vlm_process
+from imgproc.vlm_process import DEFAULT_PROMPT, vlm_process
 
 app = typer.Typer()
 

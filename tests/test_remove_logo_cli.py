@@ -8,7 +8,7 @@ import pytest
 from PIL import Image
 from typer.testing import CliRunner
 
-from imggen.cmd.remove_logo import app
+from imgproc.cmd.remove_logo import app
 
 runner = CliRunner()
 

@@ -2,24 +2,22 @@ from pathlib import Path
 
 import typer
 
-from imggen.vlm_process import vlm_process
+from imgproc.vlm_process import vlm_process
 
 app = typer.Typer()
 
 # Get the prompt file path relative to the repository root
-PROMPT_FILE = Path(__file__).parent.parent.parent.parent / "prompts" / "caption_img.txt"
+PROMPT_FILE = Path(__file__).parent.parent.parent.parent / "prompts" / "detect_logo.txt"
 
 
 @app.command()
 def main(
-    folder: Path = typer.Argument(..., help="Folder containing images to caption"),
+    folder: Path = typer.Argument(..., help="Folder containing images to check"),
     output: Path = typer.Option(None, help="Output JSON file"),
-    model_name: str = typer.Option(
-        "Qwen/Qwen3-VL-2B-Instruct", help="Hugging Face model name"
-    ),
-    batch_size: int = typer.Option(1, help="Number of images to process in parallel"),
+    model_name: str = typer.Option("Qwen/Qwen3-VL-2B-Instruct", help="HF model"),
+    batch_size: int = typer.Option(8, help="Number of images to process in parallel"),
 ):
-    """Generate captions for all images in a folder using a VLM.
+    """Detect logos with a VLM.
 
     Some good models to use:
 
@@ -34,9 +32,9 @@ def main(
     # Read prompt from file
     prompt = PROMPT_FILE.read_text()
 
-    # Set default output filename for caption-images
+    # Set default output filename for detect-logo
     if output is None:
-        output = folder / "captions.json"
+        output = folder / "logo_bbox_output.json"
 
     vlm_process(
         folder=folder,

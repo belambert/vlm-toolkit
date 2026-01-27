@@ -3,8 +3,8 @@
 # Required Configuration
 export PROJECT_ID="llm-exp-405305"
 
-REPO_NAME="imggen"
-IMAGE_NAME="imggen"
+REPO_NAME="imgproc"
+IMAGE_NAME="imgproc"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 export IMAGE_URI="us-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
@@ -18,7 +18,7 @@ export GPU_TYPE="nvidia-a100-80gb"
 # export BOOT_DISK_SIZE=200
 export GPU_COUNT=1
 
-BUCKET=imggen
+BUCKET=imgproc
 
 # Source the library from the submodule
 source "gcp-batch/lib/gcp_batch.sh"
