@@ -15,7 +15,7 @@ def main(
     folder: Path = typer.Argument(..., help="Folder containing images to check"),
     output: Path = typer.Option(None, help="Output JSON file"),
     model_name: str = typer.Option("Qwen/Qwen3-VL-2B-Instruct", help="HF model"),
-    batch_size: int = typer.Option(16, help="Number of images to process in parallel"),
+    batch_size: int = typer.Option(8, help="Number of images to process in parallel"),
 ):
     """Detect logos with a VLM.
 

@@ -6,6 +6,7 @@ from rich import print as rprint
 from imggen.img_utils import find_images
 from imggen.util import get_device
 from imggen.vlm import load_model, prepare_vlm_batch
+from tqdm import tqdm
 
 DEFAULT_PROMPT = "Describe this image."
 
@@ -47,7 +48,6 @@ def vlm_process(
     """
     image_files = find_images(folder)
     device = get_device()
-    print(device)
     model, processor = load_model(model_name, device)
     print(model.device)
 
@@ -59,15 +59,9 @@ def vlm_process(
     with open(output, "w") as f:
         # Process images in batches
         total_batches = (len(image_files) + batch_size - 1) // batch_size
-        for i in range(0, len(image_files), batch_size):
+        print(f"Processing {len(image_files):,} imgs in {total_batches:,} batches of size {batch_size}...", flush=True)
+        for i in tqdm(range(0, len(image_files), batch_size)):
             batch = image_files[i : i + batch_size]
-            batch_num = i // batch_size + 1
-            print(
-                f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...",
-                flush=True,
-            )
-
-            # try:
             batch_results = process_batch(
                 model, processor, batch, prompt, device, max_dim
             )
@@ -76,8 +70,6 @@ def vlm_process(
                 f.write(json.dumps(result) + "\n")
                 num_processed += 1
             f.flush()  # Ensure data is written after each batch
-            # except Exception as e:
-            #     print(f"  Error processing batch: {e}, skipping...", flush=True)
 
     print(f"\nResults saved to: {output}", flush=True)
     print(f"Processed: {num_processed}/{len(image_files)} images", flush=True)
@@ -94,12 +86,10 @@ def process_batch(
     max_dim: int | None,
 ) -> list[dict]:
     """Process a batch of images using a VLM."""
-    # Prepare batch inputs
-    rprint(image_paths)
+    # prepare batch inputs
     inputs = prepare_vlm_batch(processor, image_paths, prompt, device, max_dim)
-    print(inputs["input_ids"].device)
 
-    # Generate responses
+    # generate responses
     generated_ids = model.generate(**inputs, max_new_tokens=512)
     generated_ids_trimmed = [
         out_ids[len(in_ids) :]
@@ -110,9 +100,8 @@ def process_batch(
         skip_special_tokens=True,
         clean_up_tokenization_spaces=False,
     )
-    rprint(responses)
 
-    # Create results
+    # convert results to dict
     results = []
     for image_path, response in zip(image_paths, responses):
         results.append({"file_name": str(image_path), "output": response})
