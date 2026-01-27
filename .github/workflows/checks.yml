@@ -38,8 +38,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install uv
-          uv sync --extra dev
+          # Use pip directly with CPU PyTorch index for CI
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu -e ".[dev]"
 
       - name: Run tests
         run: uv run pytest
