@@ -1,9 +1,12 @@
 import json
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from enum import Enum
 from pathlib import Path
 
 import typer
 from PIL import Image
+from tqdm import tqdm
 
 from imgproc.bbox import parse_bboxes
 from imgproc.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover
@@ -16,6 +19,26 @@ class RemovalMethod(str, Enum):
 
     GRAY = "gray"
     OPENCV = "opencv"
+
+
+def process_single_image(image_path: Path, bboxes: list, output_path: Path, method: RemovalMethod) -> tuple[bool, str, Path | None]:
+    """Process a single image (used for parallel processing)."""
+    try:
+        # create remover instance
+        remover: LogoRemover
+        if method == RemovalMethod.OPENCV:
+            remover = OpenCVLogoRemover()
+        else:
+            remover = GrayLogoRemover()
+
+        # process image
+        image = Image.open(image_path).convert("RGB")
+        result = remover.remove(image, bboxes)
+        result.save(output_path)
+
+        return (True, image_path.name, output_path)
+    except Exception as e:
+        return (False, image_path.name, str(e))
 
 
 @app.command()
@@ -72,37 +95,44 @@ def main(
 
     print(f"Found {len(images_to_clean)} images with logos to remove", flush=True)
 
-    # Create logo remover instance based on selected method
-    remover: LogoRemover
-    if method == RemovalMethod.OPENCV:
-        remover = OpenCVLogoRemover()
-    else:
-        remover = GrayLogoRemover()
-
-    # Process each image
-    results = []
+    # prepare tasks for parallel processing
+    tasks = []
     for detection in images_to_clean:
         image_path = detection["abs_path"]
         bboxes = detection["bboxes"]
-        num_bboxes = len(bboxes)
+        output_path = output_dir / f"{image_path.name}"
+        tasks.append((image_path, bboxes, output_path, method))
 
-        print(
-            f"Processing: {image_path.name} ({num_bboxes} bbox)...", end="", flush=True
-        )
+    # process images in parallel
+    num_workers = os.cpu_count()
+    print(f"Processing {len(images_to_clean)} images with {num_workers} workers...", flush=True)
 
-        try:
-            image = Image.open(image_path).convert("RGB")
-            result = remover.remove(image, bboxes)
-            output_path = output_dir / f"{image_path.name}"
-            result.save(output_path)
+    results = []
+    errors = []
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        # submit all tasks
+        futures = {
+            executor.submit(process_single_image, img_path, bboxes, out_path, method): (img_path, len(bboxes))
+            for img_path, bboxes, out_path, method in tasks
+        }
 
-            results.append(output_path)
-            print(f" ✓ Saved to {output_path.name}", flush=True)
-        except Exception as e:
-            print(f" ✗ Error: {e}", flush=True)
-            continue
+        # process results as they complete with progress bar
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Processing"):
+            img_path, num_bboxes = futures[future]
+            success, name, result_or_error = future.result()
 
-    print(f"\nProcessed {len(results)}/{len(images_to_clean)} images", flush=True)
+            if success:
+                results.append(result_or_error)
+            else:
+                errors.append((name, result_or_error))
+
+    # report any errors
+    if errors:
+        print(f"\nErrors encountered:", flush=True)
+        for name, error in errors:
+            print(f"  ✗ {name}: {error}", flush=True)
+
+    print(f"Processed {len(results)}/{len(images_to_clean)} images", flush=True)
     print(f"Cleaned images saved to: {output_dir}", flush=True)
 
 
