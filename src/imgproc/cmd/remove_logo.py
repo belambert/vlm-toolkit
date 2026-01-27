@@ -58,6 +58,7 @@ def main(
 
     # Load detections from JSON lines file
     detections = []
+    json_dir = bboxes.parent
     with open(bboxes) as f:
         for line in f:
             if line.strip():
@@ -68,9 +69,12 @@ def main(
     # Parse bboxes and filter out images without any
     images_to_clean = []
     for detection in detections:
-        bboxes = parse_bboxes(detection["output"])
-        if bboxes:
-            detection["bboxes"] = bboxes
+        bboxes_list = parse_bboxes(detection["output"])
+        if bboxes_list:
+            detection["bboxes"] = bboxes_list
+            # resolve relative path
+            rel_path = Path(detection["file_name"])
+            detection["abs_path"] = (json_dir / rel_path).resolve()
             images_to_clean.append(detection)
 
     print(f"Found {len(images_to_clean)} images with logos to remove", flush=True)
@@ -87,7 +91,7 @@ def main(
     # Process each image
     results = []
     for detection in images_to_clean:
-        image_path = Path(detection["image_path"])
+        image_path = detection["abs_path"]
         bboxes = detection["bboxes"]
         num_bboxes = len(bboxes)
 

@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-from rich import print as rprint
 from tqdm import tqdm
 
 from imgproc.img_utils import find_images
@@ -56,18 +55,22 @@ def vlm_process(
     processed_files = set()
     if output.exists():
         print(f"Found existing output file: {output}", flush=True)
+        output_dir = output.parent
         with open(output, "r") as f:
             for line in f:
                 if line.strip():
                     try:
                         result = json.loads(line)
-                        processed_files.add(result["file_name"])
+                        # resolve relative path to absolute
+                        rel_path = Path(result["file_name"])
+                        abs_path = (output_dir / rel_path).resolve()
+                        processed_files.add(str(abs_path))
                     except (json.JSONDecodeError, KeyError):
                         continue
         print(f"Already processed: {len(processed_files)} images", flush=True)
 
     # Filter out already-processed images
-    images_to_process = [img for img in image_files if str(img) not in processed_files]
+    images_to_process = [img for img in image_files if str(img.resolve()) not in processed_files]
 
     if not images_to_process:
         print("All images already processed!", flush=True)
@@ -94,7 +97,7 @@ def vlm_process(
         for i in tqdm(range(0, len(images_to_process), batch_size)):
             batch = images_to_process[i : i + batch_size]
             batch_results = process_batch(
-                model, processor, batch, prompt, device, max_dim
+                model, processor, batch, prompt, device, max_dim, output
             )
             # Write each result as a JSON line
             for result in batch_results:
@@ -119,6 +122,7 @@ def process_batch(
     prompt: str,
     device: str,
     max_dim: int | None,
+    output_file: Path,
 ) -> list[dict]:
     """Process a batch of images using a VLM."""
     # prepare batch inputs
@@ -138,7 +142,14 @@ def process_batch(
 
     # convert results to dict
     results = []
+    output_dir = output_file.parent
     for image_path, response in zip(image_paths, responses):
-        results.append({"file_name": str(image_path), "output": response})
+        # make path relative to output file directory
+        try:
+            rel_path = Path(image_path).relative_to(output_dir)
+        except ValueError:
+            # if not relative, use absolute path
+            rel_path = Path(image_path)
+        results.append({"file_name": str(rel_path), "output": response})
 
     return results

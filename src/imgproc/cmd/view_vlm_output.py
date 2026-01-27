@@ -23,10 +23,15 @@ def main(
 
     # Load the JSON lines data
     data = []
+    json_dir = input_json.parent
     with open(input_json) as f:
         for line in f:
             if line.strip():
-                data.append(json.loads(line))
+                item = json.loads(line)
+                # resolve relative path to absolute
+                rel_path = Path(item["file_name"])
+                item["abs_path"] = (json_dir / rel_path).resolve()
+                data.append(item)
 
     # Generate HTML
     html = """<!DOCTYPE html>
@@ -79,7 +84,7 @@ def main(
 """
 
     for item in data:
-        image_path = item["image_path"]
+        image_path = item["abs_path"]
         output = item["output"]
 
         html += f"""        <div class="item">

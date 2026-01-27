@@ -28,7 +28,7 @@ def detections_json(tmp_path, temp_image):
     json_path = tmp_path / "detections.json"
     detections = [
         {
-            "image_path": str(temp_image),
+            "file_name": str(temp_image),
             "output": json.dumps([{"bbox_2d": [100, 100, 200, 200], "label": "logo"}]),
         }
     ]
@@ -95,11 +95,11 @@ def test_filters_detections_without_bboxes(tmp_path, temp_image):
     json_path = tmp_path / "detections.json"
     detections = [
         {
-            "image_path": str(temp_image),
+            "file_name": str(temp_image),
             "output": "[]",  # Empty bbox array
         },
         {
-            "image_path": str(temp_image),
+            "file_name": str(temp_image),
             "output": json.dumps([{"bbox_2d": [100, 100, 200, 200], "label": "logo"}]),
         },
     ]
@@ -134,7 +134,7 @@ def test_handles_processing_error(tmp_path):
     json_path = tmp_path / "detections.json"
     detections = [
         {
-            "image_path": "/nonexistent/image.png",
+            "file_name": "/nonexistent/image.png",
             "output": json.dumps([{"bbox_2d": [100, 100, 200, 200], "label": "logo"}]),
         }
     ]
@@ -164,11 +164,11 @@ def test_multiple_images(tmp_path):
     json_path = tmp_path / "detections.json"
     detections = [
         {
-            "image_path": str(image1_path),
+            "file_name": str(image1_path),
             "output": json.dumps([{"bbox_2d": [100, 100, 200, 200], "label": "logo"}]),
         },
         {
-            "image_path": str(image2_path),
+            "file_name": str(image2_path),
             "output": json.dumps([{"bbox_2d": [100, 100, 200, 200], "label": "logo"}]),
         },
     ]
