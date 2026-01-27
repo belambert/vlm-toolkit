@@ -21,7 +21,9 @@ class RemovalMethod(str, Enum):
     OPENCV = "opencv"
 
 
-def process_single_image(image_path: Path, bboxes: list, output_path: Path, method: RemovalMethod) -> tuple[bool, str, Path | None]:
+def process_single_image(
+    image_path: Path, bboxes: list, output_path: Path, method: RemovalMethod
+) -> tuple[bool, str, Path | None]:
     """Process a single image (used for parallel processing)."""
     try:
         # create remover instance
@@ -105,19 +107,27 @@ def main(
 
     # process images in parallel
     num_workers = os.cpu_count()
-    print(f"Processing {len(images_to_clean)} images with {num_workers} workers...", flush=True)
+    print(
+        f"Processing {len(images_to_clean)} images with {num_workers} workers...",
+        flush=True,
+    )
 
     results = []
     errors = []
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         # submit all tasks
         futures = {
-            executor.submit(process_single_image, img_path, bboxes, out_path, method): (img_path, len(bboxes))
+            executor.submit(process_single_image, img_path, bboxes, out_path, method): (
+                img_path,
+                len(bboxes),
+            )
             for img_path, bboxes, out_path, method in tasks
         }
 
         # process results as they complete with progress bar
-        for future in tqdm(as_completed(futures), total=len(futures), desc="Processing"):
+        for future in tqdm(
+            as_completed(futures), total=len(futures), desc="Processing"
+        ):
             img_path, num_bboxes = futures[future]
             success, name, result_or_error = future.result()
 
