@@ -64,14 +64,6 @@ detect-logo = "imgproc.cmd.detect_logo:app"
 caption-images = "imgproc.cmd.caption_images:app"
 remove-logo = "imgproc.cmd.remove_logo:app"
 view-vlm-output = "imgproc.cmd.view_vlm_output:app"
-train-unconditional = "imgproc.cmd.train_unconditional:app"
-train-lora-sdxl = "imgproc.cmd.train_lora_sdxl:app"
-train-lora-flux1 = "imgproc.cmd.train_lora_flux1:app"
-batch-gen = "imgproc.cmd.batch_gen:app"
-gen-flux1 = "imgproc.cmd.gen_flux1:app"
-gen-qwenimage = "imgproc.cmd.gen_qwenimage:app"
-print-flux-model = "imgproc.cmd.print_flux_model:app"
-print-t5-model = "imgproc.cmd.print_t5_model:app"
 
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]

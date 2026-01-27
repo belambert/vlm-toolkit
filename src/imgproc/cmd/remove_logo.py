@@ -6,7 +6,12 @@ import typer
 from PIL import Image
 
 from imgproc.bbox import parse_bboxes
-from imgproc.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover, SDXLLogoRemover
+from imgproc.logo import (
+    GrayLogoRemover,
+    LogoRemover,
+    OpenCVLogoRemover,
+    SDXLLogoRemover,
+)
 
 app = typer.Typer()
 
