@@ -5,6 +5,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 import typer
+import wandb
 from diffusers import DDPMPipeline, DDPMScheduler, UNet2DModel
 from diffusers.optimization import get_cosine_schedule_with_warmup
 from diffusers.training_utils import EMAModel
@@ -12,8 +13,6 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
-
-import wandb
 
 # Training hyperparameters
 IMAGE_SIZE = 256

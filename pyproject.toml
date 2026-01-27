@@ -85,6 +85,7 @@ include = '\.pyi?$'
 [tool.isort]
 profile = "black"
 line_length = 88
+known_third_party = ["wandb"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

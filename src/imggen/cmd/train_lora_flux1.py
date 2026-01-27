@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 import typer
+import wandb
 import yaml
 from diffusers import (
     AutoencoderKL,
@@ -20,8 +21,6 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, CLIPTextModel, T5EncoderModel
-
-import wandb
 
 # Training hyperparameters
 IMAGE_SIZE = 1024
