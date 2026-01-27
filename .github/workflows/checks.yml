@@ -24,7 +24,7 @@ jobs:
         run: black --check --diff src/
 
       - name: Check import sorting with isort
-        run: isort --check-only --diff src/
+        run: isort --check-only --diff --profile black src/
 
   test:
     runs-on: ubuntu-latest
