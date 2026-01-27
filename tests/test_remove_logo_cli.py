@@ -147,7 +147,7 @@ def test_handles_processing_error(tmp_path):
     result = runner.invoke(app, [str(json_path), str(output_dir), "--method", "gray"])
 
     assert result.exit_code == 0
-    assert "Error:" in result.stdout
+    assert "Errors encountered:" in result.stdout
     assert "Processed 0/1 images" in result.stdout
 
 
