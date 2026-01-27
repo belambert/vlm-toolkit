@@ -2,11 +2,11 @@ import json
 from pathlib import Path
 
 from rich import print as rprint
+from tqdm import tqdm
 
 from imggen.img_utils import find_images
 from imggen.util import get_device
 from imggen.vlm import load_model, prepare_vlm_batch
-from tqdm import tqdm
 
 DEFAULT_PROMPT = "Describe this image."
 
@@ -59,7 +59,10 @@ def vlm_process(
     with open(output, "w") as f:
         # Process images in batches
         total_batches = (len(image_files) + batch_size - 1) // batch_size
-        print(f"Processing {len(image_files):,} imgs in {total_batches:,} batches of size {batch_size}...", flush=True)
+        print(
+            f"Processing {len(image_files):,} imgs in {total_batches:,} batches of size {batch_size}...",
+            flush=True,
+        )
         for i in tqdm(range(0, len(image_files), batch_size)):
             batch = image_files[i : i + batch_size]
             batch_results = process_batch(

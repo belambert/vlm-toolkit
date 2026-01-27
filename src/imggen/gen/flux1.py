@@ -22,7 +22,6 @@ def main(
         "output.png", help="Output filename (use '-' for stdout)"
     ),
 ):
-
     pipe = FluxPipeline.from_pretrained(
         # "black-forest-labs/FLUX.1-dev",
         # "HurdyThirty/FluxedUp",

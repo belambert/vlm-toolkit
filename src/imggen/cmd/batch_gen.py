@@ -59,7 +59,7 @@ def main(
     # Generate images
     total_images = 0
     for i, prompt in enumerate(prompts):
-        print(f"Generating prompt {i+1}/{len(prompts)}: {prompt}", flush=True)
+        print(f"Generating prompt {i + 1}/{len(prompts)}: {prompt}", flush=True)
         images = pipe(
             prompt,
             num_inference_steps=num_inference_steps,

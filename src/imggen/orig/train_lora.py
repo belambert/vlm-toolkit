@@ -79,7 +79,6 @@ def main(
     # snr_gamma=None,
     # wandb: bool = True,
 ):
-
     trainer = LoraTrainer(
         data_dir=data_dir,
         model=model,
@@ -120,7 +119,6 @@ def main(
 @dataclass
 # pylint: disable-next=too-many-instance-attributes
 class LoraTrainer:
-
     data_dir: Path
     model: str
     rank: int = 8
@@ -602,7 +600,6 @@ def encode_prompt(
         prompt_embeds_list = []
         prompts = [prompt, prompt_2]
         for prompt, tokenizer, text_encoder in zip(prompts, tokenizers, text_encoders):
-
             text_inputs = tokenizer(
                 prompt,
                 padding="max_length",
@@ -690,7 +687,6 @@ def encode_prompt(
         for negative_prompt, tokenizer, text_encoder in zip(
             uncond_tokens, tokenizers, text_encoders
         ):
-
             max_length = prompt_embeds.shape[1]
             uncond_input = tokenizer(
                 negative_prompt,

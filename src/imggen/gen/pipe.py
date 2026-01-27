@@ -16,7 +16,6 @@ def main(
         "output.png", help="Output filename (use '-' for stdout)"
     ),
 ):
-
     pipe = DiffusionPipeline.from_pretrained(
         "black-forest-labs/FLUX.1-dev",
         # "Tongyi-MAI/Z-Image-Turbo",

@@ -158,7 +158,7 @@ def main():
     # 5. Denoising loop
     print("Starting denoising loop...")
     for i, t in enumerate(timesteps):
-        print(f"Step {i+1}/{NUM_INFERENCE_STEPS}")
+        print(f"Step {i + 1}/{NUM_INFERENCE_STEPS}")
 
         # Pack latents for FLUX transformer
         latents_packed = pack_latents(latents)

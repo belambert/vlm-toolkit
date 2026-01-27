@@ -91,7 +91,6 @@ def main(
         )
 
         try:
-
             image = Image.open(image_path).convert("RGB")
             result = remover.remove(image, bboxes)
             output_path = output_dir / f"{image_path.name}"

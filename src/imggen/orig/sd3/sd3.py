@@ -23,7 +23,6 @@ def cli(
     iterations: Annotated[int, typer.Option()] = 30,
     img_per_prompt: Annotated[int, typer.Option()] = 2,
 ) -> None:
-
     pipe = StableDiffusion3Pipeline.from_pretrained(
         "stabilityai/stable-diffusion-3-medium-diffusers",
         # torch_dtype=torch.float16,

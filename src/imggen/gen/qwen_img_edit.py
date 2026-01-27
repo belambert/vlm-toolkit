@@ -17,7 +17,6 @@ def main(
         "output.png", help="Output filename (use '-' for stdout)"
     ),
 ):
-
     device = get_device()
     pipe = DiffusionPipeline.from_pretrained(
         "Qwen/Qwen-Image-Edit",
