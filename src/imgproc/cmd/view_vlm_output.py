@@ -66,6 +66,10 @@ def main(
             max-width: 400px;
             max-height: 400px;
             border-radius: 4px;
+            cursor: pointer;
+        }
+        .image a {
+            display: block;
         }
         .output {
             flex-grow: 1;
@@ -89,7 +93,9 @@ def main(
 
         html += f"""        <div class="item">
             <div class="image">
-                <img src="{image_path}" alt="{Path(image_path).name}">
+                <a href="{image_path}" target="_blank">
+                    <img src="{image_path}" alt="{Path(image_path).name}">
+                </a>
             </div>
             <div class="output">{output}</div>
         </div>
