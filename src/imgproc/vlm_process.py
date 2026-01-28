@@ -127,8 +127,12 @@ def process_batch(
     output_file: Path,
 ) -> list[dict]:
     """Process a batch of images using a VLM."""
-    # prepare batch inputs
-    inputs = prepare_vlm_batch(processor, image_paths, prompt, device, max_dim)
+    # prepare batch inputs (may skip corrupted images)
+    inputs, valid_paths = prepare_vlm_batch(
+        processor, image_paths, prompt, device, max_dim
+    )
+    if inputs is None:
+        return []
 
     # generate responses
     generated_ids = model.generate(**inputs, max_new_tokens=512)
@@ -145,7 +149,7 @@ def process_batch(
     # convert results to dict
     results = []
     output_dir = output_file.parent
-    for image_path, response in zip(image_paths, responses):
+    for image_path, response in zip(valid_paths, responses):
         # make path relative to output file directory
         try:
             rel_path = Path(image_path).relative_to(output_dir)
