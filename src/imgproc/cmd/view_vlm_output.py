@@ -61,6 +61,7 @@ def main(
         }
         .image {
             flex-shrink: 0;
+            position: relative;
         }
         .image img {
             max-width: 400px;
@@ -70,6 +71,17 @@ def main(
         }
         .image a {
             display: block;
+        }
+        .filename {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            font-size: 11px;
+            color: #ddd;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 4px;
+            border-radius: 0 0 4px 4px;
         }
         .output {
             flex-grow: 1;
@@ -96,6 +108,7 @@ def main(
                 <a href="{image_path}" target="_blank">
                     <img src="{image_path}" alt="{Path(image_path).name}">
                 </a>
+                <div class="filename">{Path(image_path).name}</div>
             </div>
             <div class="output">{output}</div>
         </div>
