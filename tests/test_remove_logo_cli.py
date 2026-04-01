@@ -1,6 +1,7 @@
 """Tests for remove_logo CLI."""
 
 import json
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -47,7 +48,9 @@ def test_invalid_method(detections_json, tmp_path):
     )
 
     assert result.exit_code == 2
-    assert "Invalid value for '--method'" in result.output
+    # strip ANSI escape codes before checking output
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+    assert "Invalid value for '--method'" in plain
 
 
 def test_missing_detections_file(tmp_path):
