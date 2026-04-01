@@ -22,7 +22,7 @@ def vlm_process(
 
     Args:
         folder: Folder containing images to process
-        output: Output JSON file path (defaults to folder/results.json)
+        output: Output JSON file path (defaults to folder/output.jsonl)
         prompt: Prompt for the VLM
         model: HuggingFace model name
         batch_size: Number of images to process in parallel
@@ -49,7 +49,7 @@ def vlm_process(
     device = get_device()
 
     if output is None:
-        output = folder / "results.jsonl"
+        output = folder / "output.jsonl"
 
     # Check for existing results and filter out already-processed images
     processed_files = set()
@@ -135,7 +135,9 @@ def process_batch(
         return []
 
     # generate responses
-    generated_ids = model.generate(**inputs, max_new_tokens=512)
+    generated_ids = model.generate(
+        **inputs, max_new_tokens=512, pad_token_id=processor.tokenizer.eos_token_id
+    )
     generated_ids_trimmed = [
         out_ids[len(in_ids) :]
         for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
