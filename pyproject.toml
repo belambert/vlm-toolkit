@@ -69,6 +69,11 @@ view-vlm-output = "imgproc.cmd.view_vlm_output:app"
 requires = ["uv_build>=0.9.3,<0.10.0"]
 build-backend = "uv_build"
 
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
 [tool.black]
 line-length = 88
 target-version = ['py313']

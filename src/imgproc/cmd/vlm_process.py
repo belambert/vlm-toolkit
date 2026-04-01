@@ -15,7 +15,7 @@ def main(
     prompt_file: Path = typer.Option(
         None, help="File containing prompt (overrides --prompt)"
     ),
-    model_name: str = typer.Option("Qwen/Qwen3-VL-2B-Instruct", help="HF model"),
+    model: str = typer.Option("Qwen/Qwen3-VL-2B-Instruct", help="HF model"),
     batch_size: int = typer.Option(8, help="Number of images to process in parallel"),
     max_dim: int = typer.Option(
         None, help="Maximum dimension for image resizing (default: 1024)"
@@ -41,7 +41,7 @@ def main(
         folder=folder,
         output=output,
         prompt=prompt,
-        model_name=model_name,
+        model=model,
         batch_size=batch_size,
         max_dim=max_dim,
     )

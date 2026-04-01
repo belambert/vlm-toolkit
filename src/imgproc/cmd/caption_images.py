@@ -14,7 +14,7 @@ PROMPT_FILE = Path(__file__).parent.parent.parent.parent / "prompts" / "caption_
 def main(
     folder: Path = typer.Argument(..., help="Folder containing images to caption"),
     output: Path = typer.Option(None, help="Output JSON file"),
-    model_name: str = typer.Option(
+    model: str = typer.Option(
         "Qwen/Qwen3-VL-2B-Instruct", help="Hugging Face model name"
     ),
     batch_size: int = typer.Option(1, help="Number of images to process in parallel"),
@@ -42,7 +42,7 @@ def main(
         folder=folder,
         output=output,
         prompt=prompt,
-        model_name=model_name,
+        model=model,
         batch_size=batch_size,
     )
 

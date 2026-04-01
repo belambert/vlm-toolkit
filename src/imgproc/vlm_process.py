@@ -14,7 +14,7 @@ def vlm_process(
     folder: Path,
     output: Path | None = None,
     prompt: str = DEFAULT_PROMPT,
-    model_name: str = "Qwen/Qwen3-VL-8B-Instruct",
+    model: str = "Qwen/Qwen3-VL-8B-Instruct",
     batch_size: int = 1,
     max_dim: int | None = None,
 ) -> Path:
@@ -24,7 +24,7 @@ def vlm_process(
         folder: Folder containing images to process
         output: Output JSON file path (defaults to folder/results.json)
         prompt: Prompt for the VLM
-        model_name: HuggingFace model name
+        model: HuggingFace model name
         batch_size: Number of images to process in parallel
         max_dim: Maximum dimension for image resizing (default: 1024)
 
@@ -83,8 +83,8 @@ def vlm_process(
         flush=True,
     )
 
-    model, processor = load_model(model_name, device)
-    print(model.device)
+    vlm, processor = load_model(model, device)
+    print(vlm.device)
 
     # Open output file in append mode to preserve existing results
     num_processed = 0
@@ -99,7 +99,7 @@ def vlm_process(
         for i in tqdm(range(0, len(images_to_process), batch_size)):
             batch = images_to_process[i : i + batch_size]
             batch_results = process_batch(
-                model, processor, batch, prompt, device, max_dim, output
+                vlm, processor, batch, prompt, device, max_dim, output
             )
             # Write each result as a JSON line
             for result in batch_results:
