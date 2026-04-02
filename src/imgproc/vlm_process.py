@@ -92,6 +92,9 @@ def vlm_process(
     vlm, processor = load_model(model, device)
     print(vlm.device)
 
+    import gc
+    gc.disable()
+
     # Open output file in append mode to preserve existing results
     num_processed = 0
     file_mode = "a" if output.exists() else "w"
