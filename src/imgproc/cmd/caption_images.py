@@ -34,7 +34,9 @@ def main(
     )
 
 
-main.__doc__ = f"Generate captions for all images in a folder using a VLM.\n\n{SUGGESTED_MODELS}"
+main.__doc__ = (
+    f"Generate captions for all images in a folder using a VLM.\n\n{SUGGESTED_MODELS}"
+)
 
 
 if __name__ == "__main__":

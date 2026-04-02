@@ -2,7 +2,12 @@ from pathlib import Path
 
 import typer
 
-from imgproc.vlm_process import DEFAULT_MODEL, DEFAULT_PROMPT, SUGGESTED_MODELS, vlm_process
+from imgproc.vlm_process import (
+    DEFAULT_MODEL,
+    DEFAULT_PROMPT,
+    SUGGESTED_MODELS,
+    vlm_process,
+)
 
 app = typer.Typer()
 

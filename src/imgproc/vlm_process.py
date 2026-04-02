@@ -11,6 +11,7 @@ from imgproc.vlm import load_model, prepare_vlm_batch
 DEFAULT_PROMPT = "Describe this image."
 DEFAULT_MODEL = "Qwen/Qwen3.5-2B"
 SUGGESTED_MODELS = """\
+Suggested models:
 - Qwen/Qwen3.5-0.8B
 - Qwen/Qwen3.5-2B
 - Qwen/Qwen3.5-4B
