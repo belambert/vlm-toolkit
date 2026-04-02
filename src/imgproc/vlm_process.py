@@ -9,13 +9,24 @@ from imgproc.util import get_device
 from imgproc.vlm import load_model, prepare_vlm_batch
 
 DEFAULT_PROMPT = "Describe this image."
+DEFAULT_MODEL = "Qwen/Qwen3.5-2B"
+SUGGESTED_MODELS = """\
+- Qwen/Qwen3.5-0.8B
+- Qwen/Qwen3.5-2B
+- Qwen/Qwen3.5-4B
+- Qwen/Qwen3.5-9B
+- Qwen/Qwen3.5-2B
+- Qwen/Qwen3.5-2B
+
+All of these have quantized versions, which can be specified by adding "-FP8" to
+the end of the name."""
 
 
 def vlm_process(
     folder: Path,
     output: Path | None = None,
     prompt: str = DEFAULT_PROMPT,
-    model: str = "Qwen/Qwen3-VL-8B-Instruct",
+    model: str = DEFAULT_MODEL,
     batch_size: int = 1,
     max_dim: int | None = None,
 ) -> Path:
@@ -32,19 +43,6 @@ def vlm_process(
     Returns:
         Path to the output JSON file
 
-    Some models to use:
-    - Qwen/Qwen3-VL-2B-Instruct
-    - Qwen/Qwen3-VL-4B-Instruct
-    - Qwen/Qwen3-VL-8B-Instruct
-    - Qwen/Qwen3-VL-32B-Instruct
-    - Qwen/Qwen3-VL-30B-A3B-Instruct
-    - Qwen/Qwen2.5-VL-72B-Instruct
-    - Qwen/Qwen2.5-VL-72B-Instruct-AWQ
-    - meta-llama/Llama-3.2-11B-Vision-Instruct
-    - meta-llama/Llama-3.2-90B-Vision-Instruct
-
-    All of these have quantized versions, which can be specified by adding "-FP8" to
-    the end of the name.
     """
     image_files = find_images(folder)
     device = get_device()

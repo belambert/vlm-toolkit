@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from imgproc.vlm_process import vlm_process
+from imgproc.vlm_process import DEFAULT_MODEL, SUGGESTED_MODELS, vlm_process
 
 app = typer.Typer()
 
@@ -14,21 +14,10 @@ PROMPT_FILE = Path(__file__).parent.parent.parent.parent / "prompts" / "detect_l
 def main(
     folder: Path = typer.Argument(..., help="Folder containing images to check"),
     output: Path = typer.Option(None, help="Output JSON file"),
-    model: str = typer.Option("Qwen/Qwen3-VL-2B-Instruct", help="HF model"),
+    model: str = typer.Option(DEFAULT_MODEL, help="HF model"),
     batch_size: int = typer.Option(8, help="Number of images to process in parallel"),
 ):
-    """Detect logos with a VLM.
-
-    Some good models to use:
-
-    - Qwen/Qwen3-VL-2B-Instruct
-    - Qwen/Qwen3-VL-4B-Instruct
-    - Qwen/Qwen3-VL-8B-Instruct
-    - Qwen/Qwen3-VL-32B-Instruct
-
-    All of these have quantized versions, which can be specified by adding "-FP8" to
-    the end of the name.
-    """
+    """Detect logos with a VLM."""
     # Read prompt from file
     prompt = PROMPT_FILE.read_text()
 
@@ -43,6 +32,9 @@ def main(
         model=model,
         batch_size=batch_size,
     )
+
+
+main.__doc__ = f"Detect logos with a VLM.\n\n{SUGGESTED_MODELS}"
 
 
 if __name__ == "__main__":
