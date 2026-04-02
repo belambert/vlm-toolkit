@@ -24,6 +24,7 @@ Suggested models:
 - google/gemma-4-E4B-it
 - google/gemma-4-26B-A4B-it
 - google/gemma-4-31B-it
+- huihui-ai/Huihui-Qwen3.5-9B-abliterated
 """
 
 
@@ -104,23 +105,26 @@ def vlm_process(
             images_to_process[i : i + batch_size]
             for i in range(0, len(images_to_process), batch_size)
         ]
-        # prefetch first batch
+        # prefetch first batch (CPU-only prep, no device transfer)
         prefetch = ThreadPoolExecutor(max_workers=1)
         next_future = prefetch.submit(
-            prepare_vlm_batch, processor, batches[0], prompt, device, max_dim
+            prepare_vlm_batch, processor, batches[0], prompt, None, max_dim
         )
         for idx, batch in enumerate(tqdm(batches)):
             inputs, valid_paths = next_future.result()
-            # prefetch the next batch while we run inference
+            # prefetch the next batch on CPU while we run inference
             if idx + 1 < len(batches):
                 next_future = prefetch.submit(
                     prepare_vlm_batch,
                     processor,
                     batches[idx + 1],
                     prompt,
-                    device,
+                    None,
                     max_dim,
                 )
+            # transfer to device in main thread
+            if inputs is not None:
+                inputs = inputs.to(device)
             batch_results = _run_inference(vlm, processor, inputs, valid_paths, output)
             for result in batch_results:
                 f.write(json.dumps(result) + "\n")

@@ -96,7 +96,8 @@ def prepare_vlm_batch(
         padding=True,
         return_tensors="pt",
     )
-    inputs = inputs.to(device)
+    if device:
+        inputs = inputs.to(device)
 
     return inputs, valid_paths
 
