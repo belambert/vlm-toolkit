@@ -45,7 +45,7 @@ def mock_processor():
 # --- process_batch tests ---
 
 
-@patch("imgproc.vlm.process_vision_info", return_value=(["img"], None))
+@patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
 def test_process_batch_returns_results(mock_vision, mock_model, mock_processor, tmp_images):
     from imgproc.vlm_process import process_batch
 
@@ -58,7 +58,7 @@ def test_process_batch_returns_results(mock_vision, mock_model, mock_processor, 
     assert "file_name" in results[0]
 
 
-@patch("imgproc.vlm.process_vision_info", return_value=(["img"], None))
+@patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
 def test_process_batch_relative_paths(mock_vision, mock_model, mock_processor, tmp_images):
     from imgproc.vlm_process import process_batch
 
@@ -71,7 +71,7 @@ def test_process_batch_relative_paths(mock_vision, mock_model, mock_processor, t
     assert not Path(rel).is_absolute()
 
 
-@patch("imgproc.vlm.process_vision_info", return_value=(["img"], None))
+@patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
 def test_process_batch_all_corrupted(mock_vision, mock_model, mock_processor, tmp_path):
     from imgproc.vlm_process import process_batch
 
