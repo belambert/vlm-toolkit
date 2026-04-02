@@ -41,8 +41,14 @@ jobs:
           # Use pip directly with CPU PyTorch index for CI
           pip install --extra-index-url https://download.pytorch.org/whl/cpu -e ".[dev]"
 
-      - name: Run tests
-        run: pytest
+      - name: Run tests with coverage
+        run: pytest --cov=imgproc --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to Codecov
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
 
   docker:
     runs-on: ubuntu-latest
