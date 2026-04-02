@@ -140,8 +140,11 @@ def vlm_process(
             batch_results = _run_inference(vlm, processor, inputs, valid_paths, output)
             t_infer = time.perf_counter() - t0
 
+            avg_tokens = (
+                sum(len(r["output"]) for r in batch_results) / max(len(batch_results), 1)
+            )
             tqdm.write(
-                f"  batch {idx}: wait={t_wait:.2f}s transfer={t_transfer:.2f}s infer={t_infer:.2f}s"
+                f"  batch {idx}: wait={t_wait:.2f}s transfer={t_transfer:.2f}s infer={t_infer:.2f}s avg_chars={avg_tokens:.0f}"
             )
             for result in batch_results:
                 f.write(json.dumps(result) + "\n")
