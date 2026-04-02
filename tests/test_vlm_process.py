@@ -91,12 +91,12 @@ def test_process_batch_all_corrupted(mock_vision, mock_model, mock_processor, tm
 
 @patch("imgproc.vlm_process.load_model")
 @patch("imgproc.vlm_process.get_device", return_value="cpu")
-@patch("imgproc.vlm_process.process_batch")
-def test_vlm_process_resumes(mock_batch, mock_device, mock_load, tmp_images):
+@patch("imgproc.vlm_process._run_inference", return_value=[])
+@patch("imgproc.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), []))
+def test_vlm_process_resumes(mock_prep, mock_infer, mock_device, mock_load, tmp_images):
     from imgproc.vlm_process import vlm_process
 
     mock_load.return_value = (MagicMock(device="cpu"), MagicMock())
-    mock_batch.return_value = []
 
     output = tmp_images[0].parent / "output.jsonl"
     # pre-populate output with 2 processed images
@@ -107,8 +107,8 @@ def test_vlm_process_resumes(mock_batch, mock_device, mock_load, tmp_images):
 
     vlm_process(tmp_images[0].parent, output=output, batch_size=1)
 
-    # should only process the remaining 3
-    total_images = sum(len(call.args[2]) for call in mock_batch.call_args_list)
+    # should only prepare the remaining 3
+    total_images = sum(len(call.args[1]) for call in mock_prep.call_args_list)
     assert total_images == 3
 
 
@@ -130,29 +130,29 @@ def test_vlm_process_skips_when_all_done(mock_device, mock_load, tmp_images):
 
 @patch("imgproc.vlm_process.load_model")
 @patch("imgproc.vlm_process.get_device", return_value="cpu")
-@patch("imgproc.vlm_process.process_batch")
-def test_vlm_process_batching(mock_batch, mock_device, mock_load, tmp_images):
+@patch("imgproc.vlm_process._run_inference", return_value=[{"file_name": "x.png", "output": "y"}])
+@patch("imgproc.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), ["x.png"]))
+def test_vlm_process_batching(mock_prep, mock_infer, mock_device, mock_load, tmp_images):
     from imgproc.vlm_process import vlm_process
 
     mock_load.return_value = (MagicMock(device="cpu"), MagicMock())
-    mock_batch.return_value = [{"file_name": "x.png", "output": "y"}]
 
     vlm_process(tmp_images[0].parent, batch_size=2)
 
     # 5 images with batch_size=2 -> 3 batches (2+2+1)
-    assert mock_batch.call_count == 3
-    batch_sizes = [len(call.args[2]) for call in mock_batch.call_args_list]
+    assert mock_prep.call_count == 3
+    batch_sizes = [len(call.args[1]) for call in mock_prep.call_args_list]
     assert batch_sizes == [2, 2, 1]
 
 
 @patch("imgproc.vlm_process.load_model")
 @patch("imgproc.vlm_process.get_device", return_value="cpu")
-@patch("imgproc.vlm_process.process_batch")
-def test_vlm_process_writes_jsonl(mock_batch, mock_device, mock_load, tmp_images):
+@patch("imgproc.vlm_process._run_inference", return_value=[{"file_name": "img.png", "output": "caption"}])
+@patch("imgproc.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), ["img.png"]))
+def test_vlm_process_writes_jsonl(mock_prep, mock_infer, mock_device, mock_load, tmp_images):
     from imgproc.vlm_process import vlm_process
 
     mock_load.return_value = (MagicMock(device="cpu"), MagicMock())
-    mock_batch.return_value = [{"file_name": "img.png", "output": "caption"}]
 
     output = tmp_images[0].parent / "output.jsonl"
     vlm_process(tmp_images[0].parent, output=output, batch_size=5)

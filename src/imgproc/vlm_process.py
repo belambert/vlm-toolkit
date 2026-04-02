@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from tqdm import tqdm
@@ -96,16 +97,31 @@ def vlm_process(
             f"Processing {len(images_to_process):,} imgs in {total_batches:,} batches of size {batch_size}...",
             flush=True,
         )
-        for i in tqdm(range(0, len(images_to_process), batch_size)):
-            batch = images_to_process[i : i + batch_size]
-            batch_results = process_batch(
-                vlm, processor, batch, prompt, device, max_dim, output
+        batches = [
+            images_to_process[i : i + batch_size]
+            for i in range(0, len(images_to_process), batch_size)
+        ]
+        # prefetch first batch
+        prefetch = ThreadPoolExecutor(max_workers=1)
+        next_future = prefetch.submit(
+            prepare_vlm_batch, processor, batches[0], prompt, device, max_dim
+        )
+        for idx, batch in enumerate(tqdm(batches)):
+            inputs, valid_paths = next_future.result()
+            # prefetch the next batch while we run inference
+            if idx + 1 < len(batches):
+                next_future = prefetch.submit(
+                    prepare_vlm_batch,
+                    processor, batches[idx + 1], prompt, device, max_dim,
+                )
+            batch_results = _run_inference(
+                vlm, processor, inputs, valid_paths, output
             )
-            # Write each result as a JSON line
             for result in batch_results:
                 f.write(json.dumps(result) + "\n")
                 num_processed += 1
-            f.flush()  # Ensure data is written after each batch
+            f.flush()
+        prefetch.shutdown()
 
     print(f"\nResults saved to: {output}", flush=True)
     total_processed = len(processed_files) + num_processed
@@ -127,14 +143,17 @@ def process_batch(
     output_file: Path,
 ) -> list[dict]:
     """Process a batch of images using a VLM."""
-    # prepare batch inputs (may skip corrupted images)
     inputs, valid_paths = prepare_vlm_batch(
         processor, image_paths, prompt, device, max_dim
     )
+    return _run_inference(model, processor, inputs, valid_paths, output_file)
+
+
+def _run_inference(model, processor, inputs, valid_paths, output_file):
+    """Run model inference on prepared inputs and format results."""
     if inputs is None:
         return []
 
-    # generate responses
     generated_ids = model.generate(
         **inputs, max_new_tokens=512, pad_token_id=processor.tokenizer.eos_token_id
     )
@@ -148,15 +167,12 @@ def process_batch(
         clean_up_tokenization_spaces=False,
     )
 
-    # convert results to dict
     results = []
     output_dir = output_file.parent
     for image_path, response in zip(valid_paths, responses):
-        # make path relative to output file directory
         try:
             rel_path = Path(image_path).relative_to(output_dir)
         except ValueError:
-            # if not relative, use absolute path
             rel_path = Path(image_path)
         results.append({"file_name": str(rel_path), "output": response})
 

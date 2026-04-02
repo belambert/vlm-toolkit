@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import torch
@@ -6,6 +7,21 @@ from qwen_vl_utils import process_vision_info
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
 from imgproc.img_utils import resize_image_if_needed
+
+
+def _load_image(path: Path, max_dim: int | None) -> Image.Image | None:
+    """Load and optionally resize a single image, returning None on failure."""
+    try:
+        image = Image.open(path)
+        image.load()
+        if max_dim is not None:
+            image = resize_image_if_needed(image, max_size=max_dim)
+        else:
+            image = resize_image_if_needed(image)
+        return image
+    except OSError as e:
+        print(f"Skipping corrupted image {path}: {e}")
+        return None
 
 
 def prepare_vlm_batch(
@@ -28,21 +44,15 @@ def prepare_vlm_batch(
         Tuple of (processed inputs, list of valid image paths). Images that
         failed to load (truncated/corrupted) are skipped.
     """
-    # Load and prepare all images, skipping corrupted ones
+    # Load images in parallel, skipping corrupted ones
+    with ThreadPoolExecutor(max_workers=len(image_paths)) as pool:
+        images = list(pool.map(lambda p: _load_image(p, max_dim), image_paths))
+
     all_messages = []
     valid_paths = []
-    for image_path in image_paths:
-        try:
-            image = Image.open(image_path)
-            image.load()  # force load to catch truncated images early
-            if max_dim is not None:
-                image = resize_image_if_needed(image, max_size=max_dim)
-            else:
-                image = resize_image_if_needed(image)
-        except OSError as e:
-            print(f"Skipping corrupted image {image_path}: {e}")
+    for image_path, image in zip(image_paths, images):
+        if image is None:
             continue
-
         messages = [
             {
                 "role": "user",
