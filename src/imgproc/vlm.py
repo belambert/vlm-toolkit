@@ -95,7 +95,7 @@ def prepare_vlm_batch(
 
     if device:
         inputs = inputs.to(device)
-    
+
     return inputs, valid_paths
 
 
