@@ -112,11 +112,13 @@ def vlm_process(
             if idx + 1 < len(batches):
                 next_future = prefetch.submit(
                     prepare_vlm_batch,
-                    processor, batches[idx + 1], prompt, device, max_dim,
+                    processor,
+                    batches[idx + 1],
+                    prompt,
+                    device,
+                    max_dim,
                 )
-            batch_results = _run_inference(
-                vlm, processor, inputs, valid_paths, output
-            )
+            batch_results = _run_inference(vlm, processor, inputs, valid_paths, output)
             for result in batch_results:
                 f.write(json.dumps(result) + "\n")
                 num_processed += 1
