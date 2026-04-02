@@ -1,4 +1,5 @@
 import json
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -111,7 +112,10 @@ def vlm_process(
             prepare_vlm_batch, processor, batches[0], prompt, None, max_dim
         )
         for idx, batch in enumerate(tqdm(batches)):
+            t0 = time.perf_counter()
             inputs, valid_paths = next_future.result()
+            t_wait = time.perf_counter() - t0
+
             # prefetch the next batch on CPU while we run inference
             if idx + 1 < len(batches):
                 next_future = prefetch.submit(
@@ -122,10 +126,20 @@ def vlm_process(
                     None,
                     max_dim,
                 )
+
             # transfer to device in main thread
+            t0 = time.perf_counter()
             if inputs is not None:
                 inputs = inputs.to(device)
+            t_transfer = time.perf_counter() - t0
+
+            t0 = time.perf_counter()
             batch_results = _run_inference(vlm, processor, inputs, valid_paths, output)
+            t_infer = time.perf_counter() - t0
+
+            tqdm.write(
+                f"  batch {idx}: wait={t_wait:.2f}s transfer={t_transfer:.2f}s infer={t_infer:.2f}s"
+            )
             for result in batch_results:
                 f.write(json.dumps(result) + "\n")
                 num_processed += 1
