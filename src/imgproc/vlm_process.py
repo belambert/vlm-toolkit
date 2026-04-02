@@ -15,11 +15,15 @@ SUGGESTED_MODELS = """\
 - Qwen/Qwen3.5-2B
 - Qwen/Qwen3.5-4B
 - Qwen/Qwen3.5-9B
-- Qwen/Qwen3.5-2B
-- Qwen/Qwen3.5-2B
-
-All of these have quantized versions, which can be specified by adding "-FP8" to
-the end of the name."""
+- Qwen/Qwen3.5-27B
+- Qwen/Qwen3.5-27B-FP8
+- Qwen/Qwen3.5-35B-A3B
+- Qwen/Qwen3.5-35B-A3B-FP8
+- google/gemma-4-E2B-it
+- google/gemma-4-E4B-it
+- google/gemma-4-26B-A4B-it
+- google/gemma-4-31B-it
+"""
 
 
 def vlm_process(
