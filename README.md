@@ -1,5 +1,6 @@
 # imgproc
 
+[![CI](https://github.com/belambert/imgproc/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/belambert/imgproc/actions/workflows/checks.yml)
 [![codecov](https://codecov.io/gh/belambert/imgproc/graph/badge.svg)](https://codecov.io/gh/belambert/imgproc)
 
 For vlm-process, we can resize the images before processing....
