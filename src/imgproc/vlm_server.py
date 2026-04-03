@@ -37,15 +37,19 @@ def _load_and_encode(path: Path, max_dim: int | None) -> str | None:
     return f"data:{mime};base64,{b64}"
 
 
-def _send_request(
+def _process_image(
     client: httpx.Client,
     base_url: str,
     model: str,
     prompt: str,
-    data_uri: str,
+    path: Path,
+    max_dim: int | None,
     max_tokens: int,
-) -> str:
-    """Send a single chat completion request and return the response text."""
+) -> str | None:
+    """Encode an image and send a chat completion request. Returns None if image is corrupt."""
+    data_uri = _load_and_encode(path, max_dim)
+    if data_uri is None:
+        return None
     payload = {
         "model": model,
         "max_tokens": max_tokens,
@@ -119,19 +123,15 @@ def vlm_server_process(
     num_errors = 0
 
     with open(output, file_mode) as f:
-        futures = {}
         with ThreadPoolExecutor(max_workers=concurrency) as pool:
-            for path in remaining:
-                data_uri = _load_and_encode(path, max_dim)
-                if data_uri is None:
-                    continue
-                fut = pool.submit(
-                    _send_request, client, base_url, model, prompt, data_uri, max_tokens
-                )
-                futures[fut] = path
+            futures = {
+                pool.submit(
+                    _process_image, client, base_url, model, prompt, path, max_dim, max_tokens
+                ): path
+                for path in remaining
+            }
 
-            pbar = tqdm(as_completed(futures), total=len(futures))
-            for fut in pbar:
+            for fut in tqdm(as_completed(futures), total=len(futures)):
                 path = futures[fut]
                 try:
                     response = fut.result()
@@ -143,6 +143,9 @@ def vlm_server_process(
                     num_errors += 1
                     tqdm.write(f"Request failed for {path.name}: {e}")
                     continue
+
+                if response is None:
+                    continue  # corrupt image, already logged
 
                 try:
                     rel = Path(path).relative_to(output_dir)
