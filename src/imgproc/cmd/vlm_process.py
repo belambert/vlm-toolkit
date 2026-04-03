@@ -25,11 +25,15 @@ def main(
     max_dim: int = typer.Option(
         None, help="Maximum dimension for image resizing (default: 1024)"
     ),
+    schema: Path = typer.Option(
+        None, help="JSON schema file for constrained decoding (uses outlines)"
+    ),
 ):
     """Process images using a Vision Language Model."""
-    # Read prompt from file if provided
     if prompt_file is not None:
         prompt = prompt_file.read_text().strip()
+
+    schema_str = schema.read_text() if schema is not None else None
 
     vlm_process(
         folder=folder,
@@ -38,6 +42,7 @@ def main(
         model=model,
         batch_size=batch_size,
         max_dim=max_dim,
+        schema=schema_str,
     )
 
 

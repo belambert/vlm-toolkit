@@ -35,21 +35,9 @@ def vlm_process(
     model: str = DEFAULT_MODEL,
     batch_size: int = 1,
     max_dim: int | None = None,
+    schema: str | None = None,
 ) -> Path:
-    """Process images using a Vision Language Model.
-
-    Args:
-        folder: Folder containing images to process
-        output: Output JSON file path (defaults to folder/output.jsonl)
-        prompt: Prompt for the VLM
-        model: HuggingFace model name
-        batch_size: Number of images to process in parallel
-        max_dim: Maximum dimension for image resizing (default: 1024)
-
-    Returns:
-        Path to the output JSON file
-
-    """
+    """Process images using a Vision Language Model."""
     image_files = find_images(folder)
     device = get_device()
 
@@ -91,6 +79,11 @@ def vlm_process(
     vlm, processor = load_model(model, device)
     print(vlm.device)
 
+    logits_processor = None
+    if schema is not None:
+        logits_processor = _build_json_logits_processor(schema, vlm, processor)
+        print("Constrained decoding enabled (JSON schema)", flush=True)
+
     # Open output file in append mode to preserve existing results
     num_processed = 0
     file_mode = "a" if output.exists() else "w"
@@ -125,7 +118,9 @@ def vlm_process(
             # transfer to device in main thread
             if inputs is not None:
                 inputs = inputs.to(device)
-            batch_results = _run_inference(vlm, processor, inputs, valid_paths, output)
+            batch_results = _run_inference(
+                vlm, processor, inputs, valid_paths, output, logits_processor
+            )
             for result in batch_results:
                 f.write(json.dumps(result) + "\n")
                 num_processed += 1
@@ -140,6 +135,16 @@ def vlm_process(
     )
 
     return output
+
+
+def _build_json_logits_processor(schema_str, model, processor):
+    """Build an outlines logits processor for JSON schema constrained decoding."""
+    import outlines
+    from outlines.backends.outlines_core import OutlinesCoreBackend
+
+    outlines_model = outlines.from_transformers(model, processor)
+    backend = OutlinesCoreBackend(outlines_model)
+    return backend.get_json_schema_logits_processor(schema_str)
 
 
 def process_batch(
@@ -158,14 +163,21 @@ def process_batch(
     return _run_inference(model, processor, inputs, valid_paths, output_file)
 
 
-def _run_inference(model, processor, inputs, valid_paths, output_file):
+def _run_inference(model, processor, inputs, valid_paths, output_file, lp=None):
     """Run model inference on prepared inputs and format results."""
     if inputs is None:
         return []
 
-    generated_ids = model.generate(
-        **inputs, max_new_tokens=512, pad_token_id=processor.tokenizer.eos_token_id
+    generate_kwargs = dict(
+        max_new_tokens=512, pad_token_id=processor.tokenizer.eos_token_id
     )
+    if lp is not None:
+        from transformers import LogitsProcessorList
+
+        lp.reset()
+        generate_kwargs["logits_processor"] = LogitsProcessorList([lp])
+
+    generated_ids = model.generate(**inputs, **generate_kwargs)
     generated_ids_trimmed = [
         out_ids[len(in_ids) :]
         for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
