@@ -126,7 +126,14 @@ def vlm_server_process(
         with ThreadPoolExecutor(max_workers=concurrency) as pool:
             futures = {
                 pool.submit(
-                    _process_image, client, base_url, model, prompt, path, max_dim, max_tokens
+                    _process_image,
+                    client,
+                    base_url,
+                    model,
+                    prompt,
+                    path,
+                    max_dim,
+                    max_tokens,
                 ): path
                 for path in remaining
             }
@@ -137,7 +144,9 @@ def vlm_server_process(
                     response = fut.result()
                 except httpx.HTTPStatusError as e:
                     num_errors += 1
-                    tqdm.write(f"Server error for {path.name}: {e.response.status_code} {e.response.text[:200]}")
+                    tqdm.write(
+                        f"Server error for {path.name}: {e.response.status_code} {e.response.text[:200]}"
+                    )
                     continue
                 except httpx.RequestError as e:
                     num_errors += 1
