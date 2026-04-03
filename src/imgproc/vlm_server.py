@@ -8,6 +8,7 @@ from pathlib import Path
 
 import httpx
 from PIL import Image
+from tqdm import tqdm
 
 from imgproc.img_utils import find_images, resize_image_if_needed
 
@@ -115,6 +116,7 @@ def vlm_server_process(
     output_dir = output.parent
     file_mode = "a" if output.exists() else "w"
     num_done = 0
+    num_errors = 0
 
     with open(output, file_mode) as f:
         futures = {}
@@ -128,15 +130,18 @@ def vlm_server_process(
                 )
                 futures[fut] = path
 
-            for fut in as_completed(futures):
+            pbar = tqdm(as_completed(futures), total=len(futures))
+            for fut in pbar:
                 path = futures[fut]
                 try:
                     response = fut.result()
                 except httpx.HTTPStatusError as e:
-                    print(f"Server error for {path}: {e}")
+                    num_errors += 1
+                    tqdm.write(f"Server error for {path.name}: {e.response.status_code} {e.response.text[:200]}")
                     continue
                 except httpx.RequestError as e:
-                    print(f"Request failed for {path}: {e}")
+                    num_errors += 1
+                    tqdm.write(f"Request failed for {path.name}: {e}")
                     continue
 
                 try:
@@ -147,10 +152,10 @@ def vlm_server_process(
                 f.write(json.dumps(rec) + "\n")
                 f.flush()
                 num_done += 1
-                if num_done % 50 == 0:
-                    print(f"  {num_done}/{len(remaining)} done", flush=True)
 
     client.close()
     total = len(processed) + num_done
     print(f"Done: {num_done} new ({total}/{len(image_files)} total)", flush=True)
+    if num_errors:
+        print(f"Errors: {num_errors}", flush=True)
     return output
