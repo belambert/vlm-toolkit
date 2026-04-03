@@ -12,6 +12,7 @@ dependencies = [
     "diffusers>=0.36.0",
     "google-auth>=2.45.0",
     "google-cloud-storage>=3.7.0",
+    "httpx>=0.28.1",
     "kernels>=0.12.3",
     "numpy>=2.2.1",
     "opencv-python>=4.10.0",
@@ -62,6 +63,7 @@ explicit = true
 
 [project.scripts]
 vlm-process = "imgproc.cmd.vlm_process:app"
+vlm-server = "imgproc.cmd.vlm_server:app"
 detect-logo = "imgproc.cmd.detect_logo:app"
 caption-images = "imgproc.cmd.caption_images:app"
 remove-logo = "imgproc.cmd.remove_logo:app"
