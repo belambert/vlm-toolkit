@@ -1,0 +1,32 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          # CPU PyTorch index keeps the mypy environment small
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu -e ".[dev]"
+
+      - name: Check code formatting with Black
+        run: black --check --diff src/
+
+      - name: Check import sorting with isort
+        run: isort --check-only --diff --profile black src/
+
+      - name: Check types with mypy
+        run: mypy

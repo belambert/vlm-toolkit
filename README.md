@@ -1,6 +1,7 @@
 # imgproc
 
-[![CI](https://github.com/belambert/imgproc/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/belambert/imgproc/actions/workflows/checks.yml)
+[![Lint](https://github.com/belambert/imgproc/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/belambert/imgproc/actions/workflows/lint.yml)
+[![Test](https://github.com/belambert/imgproc/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/belambert/imgproc/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/belambert/imgproc/graph/badge.svg)](https://codecov.io/gh/belambert/imgproc)
 
 Batch image processing with vision language models: captioning, logo and
