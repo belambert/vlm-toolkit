@@ -45,8 +45,7 @@ def mock_processor():
 # --- process_batch tests ---
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
-def test_process_batch_returns_results(mock_vision, mock_model, mock_processor, tmp_images):
+def test_process_batch_returns_results(mock_model, mock_processor, tmp_images):
     from imgproc.vlm_process import process_batch
 
     output_file = tmp_images[0].parent / "output.jsonl"
@@ -58,8 +57,7 @@ def test_process_batch_returns_results(mock_vision, mock_model, mock_processor, 
     assert "file_name" in results[0]
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
-def test_process_batch_strips_whitespace(mock_vision, mock_model, mock_processor, tmp_images):
+def test_process_batch_strips_whitespace(mock_model, mock_processor, tmp_images):
     from imgproc.vlm_process import process_batch
 
     mock_processor.batch_decode.return_value = ["  nature\n"]
@@ -70,8 +68,7 @@ def test_process_batch_strips_whitespace(mock_vision, mock_model, mock_processor
     assert results[0]["output"] == "nature"
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
-def test_process_batch_relative_paths(mock_vision, mock_model, mock_processor, tmp_images):
+def test_process_batch_relative_paths(mock_model, mock_processor, tmp_images):
     from imgproc.vlm_process import process_batch
 
     output_file = tmp_images[0].parent / "output.jsonl"
@@ -83,8 +80,7 @@ def test_process_batch_relative_paths(mock_vision, mock_model, mock_processor, t
     assert not Path(rel).is_absolute()
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
-def test_process_batch_all_corrupted(mock_vision, mock_model, mock_processor, tmp_path):
+def test_process_batch_all_corrupted(mock_model, mock_processor, tmp_path):
     from imgproc.vlm_process import process_batch
 
     bad = tmp_path / "bad.png"

@@ -27,8 +27,7 @@ def tmp_images(tmp_path):
     return paths
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img_input"], None))
-def test_prepare_vlm_batch_loads_all_images(mock_vision, processor, tmp_images):
+def test_prepare_vlm_batch_loads_all_images(processor, tmp_images):
     inputs, valid_paths = prepare_vlm_batch(
         processor, tmp_images, "describe", "cpu"
     )
@@ -38,8 +37,7 @@ def test_prepare_vlm_batch_loads_all_images(mock_vision, processor, tmp_images):
     assert processor.call_count == 1
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img_input"], None))
-def test_prepare_vlm_batch_skips_corrupted(mock_vision, processor, tmp_images):
+def test_prepare_vlm_batch_skips_corrupted(processor, tmp_images):
     # write garbage to the second image
     tmp_images[1].write_bytes(b"not an image")
 
@@ -50,8 +48,7 @@ def test_prepare_vlm_batch_skips_corrupted(mock_vision, processor, tmp_images):
     assert tmp_images[1] not in valid_paths
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img_input"], None))
-def test_prepare_vlm_batch_all_corrupted(mock_vision, processor, tmp_path):
+def test_prepare_vlm_batch_all_corrupted(processor, tmp_path):
     bad = tmp_path / "bad.png"
     bad.write_bytes(b"garbage")
 
@@ -62,8 +59,7 @@ def test_prepare_vlm_batch_all_corrupted(mock_vision, processor, tmp_path):
     assert valid_paths == []
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img_input"], None))
-def test_prepare_vlm_batch_respects_max_dim(mock_vision, processor, tmp_path):
+def test_prepare_vlm_batch_respects_max_dim(processor, tmp_path):
     p = tmp_path / "big.png"
     Image.new("RGB", (2000, 1000)).save(p)
 
@@ -78,8 +74,7 @@ def test_prepare_vlm_batch_respects_max_dim(mock_vision, processor, tmp_path):
     assert img.size[1] <= 512
 
 
-@patch("qwen_vl_utils.process_vision_info", return_value=(["img_input"], None))
-def test_prepare_vlm_batch_moves_to_device(mock_vision, processor, tmp_images):
+def test_prepare_vlm_batch_moves_to_device(processor, tmp_images):
     inputs, _ = prepare_vlm_batch(
         processor, tmp_images[:1], "describe", "cpu"
     )

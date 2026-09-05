@@ -29,36 +29,6 @@ def _load_image(path: Path, max_dim: int | None) -> Image.Image | None:
         return None
 
 
-def _is_qwen_processor(processor: ProcessorMixin) -> bool:
-    return "qwen" in type(processor).__name__.lower()
-
-
-def _build_image_inputs(
-    processor: ProcessorMixin,
-    all_messages: list[list[dict]],
-    valid_images: list[Image.Image],
-) -> dict:
-    """Build processor kwargs for images based on model type."""
-    if _is_qwen_processor(processor):
-        # qwen uses process_vision_info for flat image/video lists
-        from qwen_vl_utils import process_vision_info
-
-        all_image_inputs, all_video_inputs = [], []
-        for msgs in all_messages:
-            img_in, vid_in = process_vision_info(msgs)
-            if img_in:
-                all_image_inputs.extend(img_in)
-            if vid_in:
-                all_video_inputs.extend(vid_in)
-        return {
-            "images": all_image_inputs or None,
-            "videos": all_video_inputs or None,
-        }
-
-    # other models (gemma 4, etc.) expect per-text batched images
-    return {"images": [[img] for img in valid_images]}
-
-
 def prepare_vlm_batch(
     processor: ProcessorMixin,
     image_paths: list[Path],
@@ -104,8 +74,11 @@ def prepare_vlm_batch(
         for msgs in all_messages
     ]
 
-    image_kwargs = _build_image_inputs(processor, all_messages, valid_images)
-    inputs = processor(text=texts, **image_kwargs, padding=True, return_tensors="pt")
+    # one image per text; the processor resizes to its own patch multiple
+    batched_images = [[img] for img in valid_images]
+    inputs = processor(
+        text=texts, images=batched_images, padding=True, return_tensors="pt"
+    )
 
     if device:
         inputs = inputs.to(device)
