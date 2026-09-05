@@ -1,4 +1,4 @@
-.PHONY: check format test install install-ml
+.PHONY: check format test install
 
 check:
 	@echo "Running style checks..."
@@ -16,4 +16,4 @@ test:
 
 install:
 	@echo "Installing dependencies..."
-	uv sync --extra ml --extra dev
+	uv sync --extra dev
