@@ -76,6 +76,53 @@ The presets read their prompts from `src/imgproc/prompts/`, which ships as
 package data, so they work from an installed wheel as well as a source checkout.
 To use your own prompt, pass `vlm-process --prompt-file <path>`.
 
+## How Batching Works
+
+`--batch-size` sets how many images go through the model at once. Images are
+never resized to a common shape first, so a batch can mix sizes freely. Two
+different mechanisms handle the resulting variation.
+
+**Images are concatenated, not padded.** Qwen-VL processors resize each image on
+its own, preserving aspect ratio and rounding to the processor's patch multiple,
+then flatten it into a sequence of patches and concatenate every image's patches
+into one 2D tensor. `pixel_values` has shape `(total_patches, feature_dim)` —
+there is no per-image batch dimension, so there is nothing to pad. A companion
+`image_grid_thw` records each image's `(t, h, w)` grid so the model can split
+them apart again. A batch of three images with grids `[1,18,18]`, `[1,38,28]`
+and `[1,22,14]` produces 1696 patch rows:
+
+```
+18×18 =  324
+38×28 = 1064
+22×14 =  308
+        ----
+        1696
+```
+
+Bigger images simply cost more tokens; none are spent on padding. Use
+`--max-dim` to cap the longest edge before the processor sees the image, which
+is the practical lever on both memory and token count.
+
+**Text is left padded.** Each image expands into placeholder tokens
+proportional to its patch grid, so differently sized images yield different
+prompt lengths, and `padding=True` pads them to a common length.
+`load_model` sets `padding_side = "left"` for two reasons: decoder-only
+generation needs the last real token flush against the end of the sequence, and
+`_run_inference` trims prompts with a single `out_ids[len(in_ids):]` offset
+applied to every row. That slice is only correct when the padding sits on the
+left — with right padding it would cut at the wrong point and leak pad and
+prompt tokens into the decoded text.
+
+**Batches are prefetched.** `vlm-process` prepares the next batch on the CPU in
+a background thread while the current one runs inference. Only the main thread
+moves tensors onto the device.
+
+The concatenated-patch layout above is specific to the Qwen-VL family. Models
+that resize to a fixed square instead, such as the gemma entries in the
+suggested list, produce a conventional stacked 4D `pixel_values`. Both work,
+because images are handed to the processor one per prompt and each processor
+applies its own preprocessing.
+
 ## Environment Variables
 
 - `HF_TOKEN` - Hugging Face token, for gated models (optional)
