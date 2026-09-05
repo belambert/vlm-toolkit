@@ -1,0 +1,1 @@
+Detect the logo or watermark in this image. It's likely in one of the four corners. Provide bounding box coordinates.

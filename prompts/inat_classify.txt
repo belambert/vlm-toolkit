@@ -1,0 +1,24 @@
+Please classify this picture using the following workflow.
+
+If the picture contains a hand or other body part, classify as "human".
+
+If the picture is from a microscope or other large magnification, classify
+as "magnified".
+
+If the image contains a ruler or other non-natural man-made materials classify
+as "manmade". This includes objects like notebooks, boats, paved roads, houses,
+papertowels.
+
+If the picture is largely natural, classify as "nature". It's ok if the image
+contains small amounts of natural manmade materials like stones, bricks, or
+wood boards.
+
+For any other case not covered here, use the class "other". When in doubt,
+choose the other class.
+
+Only answer with one word, the class name.  The allowed options are:
+- human
+- magnified
+- manmade
+- nature
+- other
