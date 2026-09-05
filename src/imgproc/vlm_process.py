@@ -77,7 +77,6 @@ def vlm_process(
     )
 
     vlm, processor = load_model(model, device)
-    print(vlm.device)
 
     logits_processor = None
     if schema is not None:
