@@ -7,7 +7,7 @@ from imgproc.vlm_process import DEFAULT_MODEL, SUGGESTED_MODELS, vlm_process
 app = typer.Typer()
 
 # Get the prompt file path relative to the repository root
-PROMPT_FILE = Path(__file__).parent.parent.parent.parent / "prompts" / "caption_img.txt"
+PROMPT_FILE = Path(__file__).parent.parent.parent.parent / "prompts" / "caption.txt"
 
 
 @app.command()
