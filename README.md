@@ -24,7 +24,7 @@ Run a VLM over a folder of images locally.
     uv run vlm-process <image-dir>
     uv run vlm-process <image-dir> --batch-size 8 --max-dim 1024
     uv run vlm-process <image-dir> --prompt "Describe this image in one sentence"
-    uv run vlm-process <image-dir> --prompt-file prompts/caption.txt
+    uv run vlm-process <image-dir> --prompt-file my_prompt.txt
     uv run vlm-process <image-dir> --schema schema.json
 
 `--schema` takes a JSON schema file and constrains decoding to match it, via
@@ -71,9 +71,9 @@ Renders a JSONL output file as an HTML page and opens it in a browser.
 
 ## Prompts
 
-`caption-images` and `detect-logo` read their prompts from `prompts/`, resolved
-relative to the repository root, so both expect to be run from a source
-checkout. `vlm-process --prompt-file` takes any path.
+The presets read their prompts from `src/imgproc/prompts/`, which ships as
+package data, so they work from an installed wheel as well as a source checkout.
+To use your own prompt, pass `vlm-process --prompt-file <path>`.
 
 ## Environment Variables
 

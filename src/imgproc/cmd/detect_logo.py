@@ -1,3 +1,4 @@
+from importlib.resources import files
 from pathlib import Path
 
 import typer
@@ -6,8 +7,7 @@ from imgproc.vlm_process import DEFAULT_MODEL, SUGGESTED_MODELS, vlm_process
 
 app = typer.Typer()
 
-# Get the prompt file path relative to the repository root
-PROMPT_FILE = Path(__file__).parent.parent.parent.parent / "prompts" / "detect_logo.txt"
+PROMPT_FILE = files("imgproc") / "prompts" / "detect_logo.txt"
 
 
 @app.command()
