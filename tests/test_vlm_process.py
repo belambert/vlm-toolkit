@@ -59,6 +59,18 @@ def test_process_batch_returns_results(mock_vision, mock_model, mock_processor, 
 
 
 @patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
+def test_process_batch_strips_whitespace(mock_vision, mock_model, mock_processor, tmp_images):
+    from imgproc.vlm_process import process_batch
+
+    mock_processor.batch_decode.return_value = ["  nature\n"]
+    output_file = tmp_images[0].parent / "output.jsonl"
+    results = process_batch(
+        mock_model, mock_processor, tmp_images[:1], "describe", "cpu", None, output_file
+    )
+    assert results[0]["output"] == "nature"
+
+
+@patch("qwen_vl_utils.process_vision_info", return_value=(["img"], None))
 def test_process_batch_relative_paths(mock_vision, mock_model, mock_processor, tmp_images):
     from imgproc.vlm_process import process_batch
 

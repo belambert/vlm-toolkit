@@ -65,7 +65,7 @@ def _process_image(
     }
     resp = client.post(f"{base_url}/chat/completions", json=payload)
     resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+    return resp.json()["choices"][0]["message"]["content"].strip()
 
 
 def _load_processed(output: Path) -> set[str]:

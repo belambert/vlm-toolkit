@@ -208,6 +208,6 @@ def _run_inference(
             rel_path = Path(image_path).relative_to(output_dir)
         except ValueError:
             rel_path = Path(image_path)
-        results.append({"file_name": str(rel_path), "output": response})
+        results.append({"file_name": str(rel_path), "output": response.strip()})
 
     return results
