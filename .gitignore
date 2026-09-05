@@ -11,3 +11,6 @@ wheels/
 
 # Training artifacts
 wandb/
+
+# uv
+uv.lock
