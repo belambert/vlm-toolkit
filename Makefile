@@ -2,13 +2,13 @@
 
 check:
 	@echo "Running style checks..."
-	black --check --diff src/
-	isort --check-only --diff src/
+	uv run black --check --diff src/
+	uv run isort --check-only --diff src/
 
 format:
 	@echo "Formatting code..."
-	black src/
-	isort src/
+	uv run black src/
+	uv run isort src/
 
 test:
 	@echo "Running tests..."
