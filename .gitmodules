@@ -1,3 +1,0 @@
-[submodule "gcp-batch"]
-	path = gcp-batch
-	url = git@github.com:belambert/gcp-batch.git
