@@ -1,8 +1,10 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
 from tqdm import tqdm
+from transformers import BatchFeature, PreTrainedModel, ProcessorMixin
 
 from imgproc.img_utils import find_images
 from imgproc.util import get_device
@@ -136,7 +138,9 @@ def vlm_process(
     return output
 
 
-def _build_json_logits_processor(schema_str, model, processor):
+def _build_json_logits_processor(
+    schema_str: str, model: PreTrainedModel, processor: ProcessorMixin
+) -> Any:
     """Build an outlines logits processor for JSON schema constrained decoding."""
     import outlines
     from outlines.backends.outlines_core import OutlinesCoreBackend
@@ -147,8 +151,8 @@ def _build_json_logits_processor(schema_str, model, processor):
 
 
 def process_batch(
-    model,
-    processor,
+    model: PreTrainedModel,
+    processor: ProcessorMixin,
     image_paths: list[Path],
     prompt: str,
     device: str,
@@ -162,7 +166,14 @@ def process_batch(
     return _run_inference(model, processor, inputs, valid_paths, output_file)
 
 
-def _run_inference(model, processor, inputs, valid_paths, output_file, lp=None):
+def _run_inference(
+    model: PreTrainedModel,
+    processor: ProcessorMixin,
+    inputs: BatchFeature | None,
+    valid_paths: list[Path],
+    output_file: Path,
+    lp: Any = None,
+) -> list[dict]:
     """Run model inference on prepared inputs and format results."""
     if inputs is None:
         return []
@@ -176,7 +187,10 @@ def _run_inference(model, processor, inputs, valid_paths, output_file, lp=None):
         lp.reset()
         generate_kwargs["logits_processor"] = LogitsProcessorList([lp])
 
-    generated_ids = model.generate(**inputs, **generate_kwargs)
+    # generate() lives on GenerationMixin, typed only against a private protocol
+    generated_ids = model.generate(  # type: ignore[operator]
+        **inputs, **generate_kwargs
+    )
     generated_ids_trimmed = [
         out_ids[len(in_ids) :]
         for in_ids, out_ids in zip(inputs.input_ids, generated_ids)

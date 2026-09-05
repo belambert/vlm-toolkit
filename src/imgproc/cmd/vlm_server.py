@@ -27,7 +27,7 @@ def main(
     ),
     max_tokens: int = typer.Option(512, help="Max tokens to generate"),
     concurrency: int = typer.Option(8, help="Number of concurrent requests"),
-):
+) -> None:
     """Process images via an OpenAI-compatible vision endpoint."""
     if prompt_file is not None:
         prompt = prompt_file.read_text().strip()

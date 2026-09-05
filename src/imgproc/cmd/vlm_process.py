@@ -28,7 +28,7 @@ def main(
     schema: Path = typer.Option(
         None, help="JSON schema file for constrained decoding (uses outlines)"
     ),
-):
+) -> None:
     """Process images using a Vision Language Model."""
     if prompt_file is not None:
         prompt = prompt_file.read_text().strip()

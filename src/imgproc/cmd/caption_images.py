@@ -16,7 +16,7 @@ def main(
     output: Path = typer.Option(None, help="Output JSON file"),
     model: str = typer.Option(DEFAULT_MODEL, help="Hugging Face model name"),
     batch_size: int = typer.Option(1, help="Number of images to process in parallel"),
-):
+) -> None:
     """Generate captions for all images in a folder using a VLM."""
     prompt = PROMPT_FILE.read_text()
 

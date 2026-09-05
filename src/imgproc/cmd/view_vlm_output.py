@@ -12,7 +12,7 @@ app = typer.Typer()
 @app.command()
 def main(
     input_json: Path = typer.Argument(..., help="JSON file with VLM output"),
-):
+) -> None:
     """Generate HTML visualization of VLM output.
 
     Creates an HTML file showing each image with its corresponding output.

@@ -23,7 +23,7 @@ class RemovalMethod(str, Enum):
 
 def process_single_image(
     image_path: Path, bboxes: list, output_path: Path, method: RemovalMethod
-) -> tuple[bool, str, Path | None]:
+) -> tuple[bool, str, Path | str]:
     """Process a single image (used for parallel processing)."""
     try:
         remover: LogoRemover
@@ -50,7 +50,7 @@ def main(
     method: RemovalMethod = typer.Option(
         RemovalMethod.OPENCV, help="Inpainting method"
     ),
-):
+) -> None:
     """Remove logos from images using inpainting.
 
     Expects a JSON file where each entry has an 'output' field containing
@@ -99,9 +99,9 @@ def main(
     tasks = []
     for detection in images_to_clean:
         image_path = detection["abs_path"]
-        bboxes = detection["bboxes"]
+        bbox_list = detection["bboxes"]
         output_path = output_dir / f"{image_path.name}"
-        tasks.append((image_path, bboxes, output_path, method))
+        tasks.append((image_path, bbox_list, output_path, method))
 
     # process images in parallel
     num_workers = os.cpu_count()
@@ -114,11 +114,13 @@ def main(
     errors = []
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         futures = {
-            executor.submit(process_single_image, img_path, bboxes, out_path, method): (
+            executor.submit(
+                process_single_image, img_path, bbox_list, out_path, method
+            ): (
                 img_path,
-                len(bboxes),
+                len(bbox_list),
             )
-            for img_path, bboxes, out_path, method in tasks
+            for img_path, bbox_list, out_path, method in tasks
         }
 
         # process results as they complete with progress bar

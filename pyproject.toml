@@ -27,6 +27,7 @@ dependencies = [
 dev = [
     "black>=24.10.0",
     "isort>=5.13.2",
+    "mypy>=1.14.0",
     "pytest>=8.3.4",
     "pytest-cov>=7.1.0",
 ]
@@ -64,6 +65,7 @@ build-backend = "uv_build"
 dev = [
     "black>=24.10.0",
     "isort>=5.13.2",
+    "mypy>=1.14.0",
     "pytest>=8.3.4",
     "pytest-cov>=7.1.0",
 ]
@@ -77,6 +79,11 @@ include = '\.pyi?$'
 profile = "black"
 line_length = 88
 known_third_party = ["wandb"]
+
+[tool.mypy]
+python_version = "3.13"
+files = ["src"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

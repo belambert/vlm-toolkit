@@ -20,7 +20,7 @@ DEFAULT_MODEL = "default"
 def _load_and_encode(path: Path, max_dim: int | None) -> str | None:
     """Load, resize, and base64-encode an image. Returns None on failure."""
     try:
-        img = Image.open(path)
+        img: Image.Image = Image.open(path)
         img.load()
         img = resize_image_if_needed(img, max_size=max_dim or 1024)
     except OSError as e:
@@ -70,7 +70,7 @@ def _process_image(
 
 def _load_processed(output: Path) -> set[str]:
     """Load already-processed file names from an existing JSONL output."""
-    processed = set()
+    processed: set[str] = set()
     if not output.exists():
         return processed
     output_dir = output.parent

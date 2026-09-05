@@ -16,7 +16,7 @@ def main(
     output: Path = typer.Option(None, help="Output JSON file"),
     model: str = typer.Option(DEFAULT_MODEL, help="HF model"),
     batch_size: int = typer.Option(8, help="Number of images to process in parallel"),
-):
+) -> None:
     """Detect logos with a VLM."""
     prompt = PROMPT_FILE.read_text()
 

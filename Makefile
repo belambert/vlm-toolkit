@@ -4,6 +4,7 @@ check:
 	@echo "Running style checks..."
 	uv run black --check --diff src/
 	uv run isort --check-only --diff src/
+	uv run mypy
 
 format:
 	@echo "Formatting code..."

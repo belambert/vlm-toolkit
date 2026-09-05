@@ -25,7 +25,7 @@ def resize_image_if_needed(image: Image.Image, max_size: int = 1024) -> Image.Im
 
 def find_images(folder: Path) -> list[Path]:
     """Find all images in a folder based on IMG_EXTENSIONS."""
-    image_files = []
+    image_files: list[Path] = []
     for ext in IMG_EXTENSIONS:
         image_files.extend(folder.glob(f"*.{ext}"))
     print(f"Found {len(image_files):,} images to check", flush=True)
