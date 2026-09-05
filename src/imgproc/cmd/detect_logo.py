@@ -18,10 +18,8 @@ def main(
     batch_size: int = typer.Option(8, help="Number of images to process in parallel"),
 ):
     """Detect logos with a VLM."""
-    # Read prompt from file
     prompt = PROMPT_FILE.read_text()
 
-    # Set default output filename for detect-logo
     if output is None:
         output = folder / "logo_bbox_output.json"
 

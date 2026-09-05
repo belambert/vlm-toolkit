@@ -21,7 +21,6 @@ def main(
         print(f"Error: {input_json} does not exist", flush=True)
         raise typer.Exit(1)
 
-    # Load the JSON lines data
     data = []
     json_dir = input_json.parent
     with open(input_json) as f:
@@ -33,7 +32,6 @@ def main(
                 item["abs_path"] = (json_dir / rel_path).resolve()
                 data.append(item)
 
-    # Generate HTML
     html = """<!DOCTYPE html>
 <html>
 <head>
@@ -119,13 +117,11 @@ def main(
 </html>
 """
 
-    # Write HTML file
     output_path = Path(str(input_json) + ".html")
     output_path.write_text(html)
 
     print(f"Generated {output_path}", flush=True)
 
-    # Open in default browser
     webbrowser.open(f"file://{output_path.absolute()}")
 
 

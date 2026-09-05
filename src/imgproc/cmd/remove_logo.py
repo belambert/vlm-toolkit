@@ -26,14 +26,12 @@ def process_single_image(
 ) -> tuple[bool, str, Path | None]:
     """Process a single image (used for parallel processing)."""
     try:
-        # create remover instance
         remover: LogoRemover
         if method == RemovalMethod.OPENCV:
             remover = OpenCVLogoRemover()
         else:
             remover = GrayLogoRemover()
 
-        # process image
         image = Image.open(image_path).convert("RGB")
         result = remover.remove(image, bboxes)
         result.save(output_path)
@@ -74,7 +72,7 @@ def main(
 
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    # Load detections from JSON lines file
+    # load detections from JSON lines file
     detections = []
     json_dir = bboxes.parent
     with open(bboxes) as f:
@@ -84,7 +82,7 @@ def main(
 
     print(f"Loaded {len(detections)} detections", flush=True)
 
-    # Parse bboxes and filter out images without any
+    # parse bboxes and filter out images without any
     images_to_clean = []
     for detection in detections:
         bboxes_list = parse_bboxes(detection["output"])
@@ -115,7 +113,6 @@ def main(
     results = []
     errors = []
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
-        # submit all tasks
         futures = {
             executor.submit(process_single_image, img_path, bboxes, out_path, method): (
                 img_path,

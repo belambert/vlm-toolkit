@@ -10,7 +10,7 @@ def resize_image_if_needed(image: Image.Image, max_size: int = 1024) -> Image.Im
     width, height = image.size
 
     if width > max_size or height > max_size:
-        # Calculate new size maintaining aspect ratio
+        # calculate new size maintaining aspect ratio
         if width > height:
             new_width = max_size
             new_height = int(height * (max_size / width))
@@ -33,24 +33,17 @@ def find_images(folder: Path) -> list[Path]:
 
 
 def ensure_dimensions_divisible_by_8(image: Image.Image) -> Image.Image:
-    """Ensure image dimensions are divisible by 8 by cropping pixels from edges.
-
-    Args:
-        image: PIL Image to check/crop
-
-    Returns:
-        Cropped image with dimensions divisible by 8
-    """
+    """Crop pixels from the edges so both dimensions are divisible by 8."""
     orig_width, orig_height = image.size
     width = (orig_width // 8) * 8
     height = (orig_height // 8) * 8
 
     if width != orig_width or height != orig_height:
-        # Calculate pixels to remove from each edge
+        # calculate pixels to remove from each edge
         width_diff = orig_width - width
         height_diff = orig_height - height
 
-        # Remove evenly from both sides (if odd, remove extra from right/bottom)
+        # remove evenly from both sides (if odd, remove extra from right/bottom)
         left = width_diff // 2
         top = height_diff // 2
         right = orig_width - (width_diff - left)

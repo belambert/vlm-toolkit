@@ -10,13 +10,5 @@ class LogoRemover(ABC):
 
     @abstractmethod
     def remove(self, image: Image.Image, bboxes: list[dict]) -> Image.Image:
-        """Remove logos from an image.
-
-        Args:
-            image: PIL Image to process
-            bboxes: List of bounding box dictionaries with bbox_2d field
-
-        Returns:
-            Processed PIL Image with logos removed
-        """
+        """Remove the logos at the given bbox_2d regions from an image."""
         pass

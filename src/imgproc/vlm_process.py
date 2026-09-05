@@ -44,7 +44,7 @@ def vlm_process(
     if output is None:
         output = folder / "output.jsonl"
 
-    # Check for existing results and filter out already-processed images
+    # check for existing results and filter out already-processed images
     processed_files = set()
     if output.exists():
         print(f"Found existing output file: {output}", flush=True)
@@ -62,7 +62,7 @@ def vlm_process(
                         continue
         print(f"Already processed: {len(processed_files)} images", flush=True)
 
-    # Filter out already-processed images
+    # filter out already-processed images
     images_to_process = [
         img for img in image_files if str(img.resolve()) not in processed_files
     ]
@@ -84,11 +84,11 @@ def vlm_process(
         logits_processor = _build_json_logits_processor(schema, vlm, processor)
         print("Constrained decoding enabled (JSON schema)", flush=True)
 
-    # Open output file in append mode to preserve existing results
+    # open output file in append mode to preserve existing results
     num_processed = 0
     file_mode = "a" if output.exists() else "w"
     with open(output, file_mode) as f:
-        # Process images in batches
+        # process images in batches
         total_batches = (len(images_to_process) + batch_size - 1) // batch_size
         print(
             f"Processing {len(images_to_process):,} imgs in {total_batches:,} batches of size {batch_size}...",

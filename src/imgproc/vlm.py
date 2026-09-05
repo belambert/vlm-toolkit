@@ -105,6 +105,6 @@ def load_model(model_name: str, device: str):
         model_name, device_map=device, dtype=torch.bfloat16, low_cpu_mem_usage=True
     )
     processor = AutoProcessor.from_pretrained(model_name)
-    # Set left padding for decoder-only models
+    # set left padding for decoder-only models
     processor.tokenizer.padding_side = "left"
     return model, processor
