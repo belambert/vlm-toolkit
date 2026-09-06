@@ -178,3 +178,7 @@ applies its own preprocessing.
 ## Notes
 
 Detect logo took 1 hour to do 5000 imgs on an L4 GPU at ~$1/hour.
+
+## License
+
+MIT - see [LICENSE](LICENSE).

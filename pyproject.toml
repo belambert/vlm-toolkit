@@ -1,12 +1,27 @@
 [project]
-name = "vlm-tools"
+name = "vlmtools"
 version = "0.1.0"
-description = "Add your description here"
+description = "Batch image processing with vision language models: captioning, logo and watermark detection, and logo removal"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Ben Lambert", email = "blambert@gmail.com" }
 ]
-requires-python = ">=3.13"
+keywords = ["vlm", "vision-language-model", "captioning", "image-processing", "qwen-vl"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.11"
 dependencies = [
     "accelerate>=1.12.0",
     "datasets>=3.2.0",
@@ -22,6 +37,11 @@ dependencies = [
     "transformers>=5.5.0",
     "typer>=0.21.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/belambert/vlm-tools"
+Repository = "https://github.com/belambert/vlm-tools"
+Issues = "https://github.com/belambert/vlm-tools/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -62,6 +82,10 @@ upload-dataset = "vlm_tools.cmd.upload_dataset:app"
 requires = ["uv_build>=0.9.3,<0.10.0"]
 build-backend = "uv_build"
 
+# the distribution is vlmtools, the import package stays vlm_tools
+[tool.uv.build-backend]
+module-name = "vlm_tools"
+
 [dependency-groups]
 dev = [
     "black>=24.10.0",
@@ -73,7 +97,7 @@ dev = [
 
 [tool.black]
 line-length = 88
-target-version = ['py313']
+target-version = ['py311']
 include = '\.pyi?$'
 
 [tool.isort]
@@ -82,6 +106,8 @@ line_length = 88
 known_third_party = ["wandb"]
 
 [tool.mypy]
+# numpy's stubs need 3.12+ syntax, so type-check at the newest supported
+# version and let the CI test matrix cover the 3.11 floor
 python_version = "3.13"
 files = ["src"]
 ignore_missing_imports = true
