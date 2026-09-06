@@ -34,6 +34,13 @@ def test_build_dataset_columns_and_decoding(run_dir):
     assert ds[0]["output"] == "cap a"
 
 
+def test_build_dataset_strips_legacy_whitespace(tmp_path):
+    img = tmp_path / "a.jpg"
+    Image.new("RGB", (8, 8)).save(img)
+    ds = build_dataset([{"abs_path": img, "output": "nature\n", "file_name": "a.jpg"}])
+    assert ds[0]["output"] == "nature"
+
+
 def test_upload_embeds_images(run_dir):
     with patch("imgproc.hf_dataset.Dataset.push_to_hub") as push:
         url = upload(run_dir, "user/ds", private=True)

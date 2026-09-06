@@ -11,7 +11,8 @@ def build_dataset(results: list[dict]) -> Dataset:
     """Build a dataset of images and their VLM output, embedding the image bytes."""
     rows = {
         "image": [str(item["abs_path"]) for item in results],
-        "output": [item["output"] for item in results],
+        # strip for runs produced before vlm-process stripped its own output
+        "output": [item["output"].strip() for item in results],
         "file_name": [item["file_name"] for item in results],
     }
     features = Features(
