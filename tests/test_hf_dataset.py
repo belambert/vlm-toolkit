@@ -34,6 +34,12 @@ def test_build_dataset_columns_and_decoding(run_dir):
     assert ds[0]["output"] == "cap a"
 
 
+def test_build_dataset_uses_basenames(run_dir):
+    ds = build_dataset(load_results(run_dir))
+    # the source jsonl refers to the images as ../imgs/<name>.jpg
+    assert ds["file_name"] == ["a.jpg", "b.jpg"]
+
+
 def test_build_dataset_strips_legacy_whitespace(tmp_path):
     img = tmp_path / "a.jpg"
     Image.new("RGB", (8, 8)).save(img)
