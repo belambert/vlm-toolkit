@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from imgproc.hf_dataset import upload
+from vlm_tools.hf_dataset import upload
 
 app = typer.Typer()
 

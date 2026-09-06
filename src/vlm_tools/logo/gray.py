@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from imgproc.bbox import scale_bbox
-from imgproc.logo.base import LogoRemover
+from vlm_tools.bbox import scale_bbox
+from vlm_tools.logo.base import LogoRemover
 
 
 class GrayLogoRemover(LogoRemover):

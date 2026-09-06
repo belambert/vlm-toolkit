@@ -15,7 +15,7 @@ from urllib.parse import quote
 
 import typer
 
-from imgproc.results import load_results
+from vlm_tools.results import load_results
 
 app = typer.Typer()
 
@@ -41,7 +41,7 @@ class _ViewerHandler(http.server.SimpleHTTPRequestHandler):
 
 def _render(items: list[dict], srcs: list[str]) -> str:
     """Render the viewer page, using srcs as the img src for each item."""
-    templates = files("imgproc") / "templates"
+    templates = files("vlm_tools") / "templates"
     page = Template((templates / "viewer.html").read_text())
     item_template = Template((templates / "item.html").read_text())
 

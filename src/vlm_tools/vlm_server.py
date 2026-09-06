@@ -10,7 +10,7 @@ import httpx
 from PIL import Image
 from tqdm import tqdm
 
-from imgproc.img_utils import find_images, resize_image_if_needed
+from vlm_tools.img_utils import find_images, resize_image_if_needed
 
 DEFAULT_PROMPT = "Describe this image."
 DEFAULT_BASE_URL = "http://localhost:8000/v1"

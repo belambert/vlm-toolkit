@@ -6,9 +6,9 @@ from typing import Any
 from tqdm import tqdm
 from transformers import BatchFeature, PreTrainedModel, ProcessorMixin
 
-from imgproc.img_utils import find_images
-from imgproc.util import get_device
-from imgproc.vlm import load_model, prepare_vlm_batch
+from vlm_tools.img_utils import find_images
+from vlm_tools.util import get_device
+from vlm_tools.vlm import load_model, prepare_vlm_batch
 
 DEFAULT_PROMPT = "Describe this image."
 DEFAULT_MODEL = "Qwen/Qwen3.5-2B"

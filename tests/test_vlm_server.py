@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from PIL import Image
 
-from imgproc.vlm_server import _process_image
+from vlm_tools.vlm_server import _process_image
 
 
 @pytest.fixture

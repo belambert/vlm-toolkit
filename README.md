@@ -1,8 +1,8 @@
-# imgproc
+# vlm-tools
 
-[![Lint](https://github.com/belambert/imgproc/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/belambert/imgproc/actions/workflows/lint.yml)
-[![Test](https://github.com/belambert/imgproc/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/belambert/imgproc/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/belambert/imgproc/graph/badge.svg)](https://codecov.io/gh/belambert/imgproc)
+[![Lint](https://github.com/belambert/vlm-tools/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/belambert/vlm-tools/actions/workflows/lint.yml)
+[![Test](https://github.com/belambert/vlm-tools/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/belambert/vlm-tools/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/belambert/vlm-tools/graph/badge.svg)](https://codecov.io/gh/belambert/vlm-tools)
 
 Batch image processing with vision language models: captioning, logo and
 watermark detection, and logo removal.
@@ -115,12 +115,12 @@ and forward the port over SSH instead:
 
 ## Prompts
 
-The presets read their prompts from `src/imgproc/prompts/`, which ships as
+The presets read their prompts from `src/vlm_tools/prompts/`, which ships as
 package data, so they work from an installed wheel as well as a source checkout.
 To use your own prompt, pass `vlm-process --prompt-file <path>`.
 
 The viewer page is packaged the same way. Its markup and CSS live in
-`src/imgproc/templates/` as `viewer.html` (the shell, with an `$items`
+`src/vlm_tools/templates/` as `viewer.html` (the shell, with an `$items`
 placeholder) and `item.html` (one image plus its output), so restyling the
 viewer means editing HTML rather than a Python string.
 

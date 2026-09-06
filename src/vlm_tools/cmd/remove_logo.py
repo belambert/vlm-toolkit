@@ -8,8 +8,8 @@ import typer
 from PIL import Image
 from tqdm import tqdm
 
-from imgproc.bbox import parse_bboxes
-from imgproc.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover
+from vlm_tools.bbox import parse_bboxes
+from vlm_tools.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover
 
 app = typer.Typer()
 

@@ -3,8 +3,8 @@ import json
 import pytest
 from PIL import Image
 
-from imgproc.cmd.view_vlm_output import _render, _web_root
-from imgproc.results import load_results
+from vlm_tools.cmd.view_vlm_output import _render, _web_root
+from vlm_tools.results import load_results
 
 
 @pytest.fixture

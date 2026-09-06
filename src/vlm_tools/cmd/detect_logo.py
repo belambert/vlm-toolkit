@@ -3,11 +3,11 @@ from pathlib import Path
 
 import typer
 
-from imgproc.vlm_process import DEFAULT_MODEL, SUGGESTED_MODELS, vlm_process
+from vlm_tools.vlm_process import DEFAULT_MODEL, SUGGESTED_MODELS, vlm_process
 
 app = typer.Typer()
 
-PROMPT_FILE = files("imgproc") / "prompts" / "detect_logo.txt"
+PROMPT_FILE = files("vlm_tools") / "prompts" / "detect_logo.txt"
 
 
 @app.command()

@@ -1,5 +1,5 @@
 [project]
-name = "imgproc"
+name = "vlm-tools"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -50,13 +50,13 @@ url = "https://download.pytorch.org/whl/cu130"
 explicit = true
 
 [project.scripts]
-vlm-process = "imgproc.cmd.vlm_process:app"
-vlm-server = "imgproc.cmd.vlm_server:app"
-detect-logo = "imgproc.cmd.detect_logo:app"
-caption-images = "imgproc.cmd.caption_images:app"
-remove-logo = "imgproc.cmd.remove_logo:app"
-view-vlm-output = "imgproc.cmd.view_vlm_output:app"
-upload-dataset = "imgproc.cmd.upload_dataset:app"
+vlm-process = "vlm_tools.cmd.vlm_process:app"
+vlm-server = "vlm_tools.cmd.vlm_server:app"
+detect-logo = "vlm_tools.cmd.detect_logo:app"
+caption-images = "vlm_tools.cmd.caption_images:app"
+remove-logo = "vlm_tools.cmd.remove_logo:app"
+view-vlm-output = "vlm_tools.cmd.view_vlm_output:app"
+upload-dataset = "vlm_tools.cmd.upload_dataset:app"
 
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]

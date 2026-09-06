@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PIL import Image
 
-from imgproc.vlm import prepare_vlm_batch
+from vlm_tools.vlm import prepare_vlm_batch
 
 
 @pytest.fixture

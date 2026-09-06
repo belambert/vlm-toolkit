@@ -5,7 +5,7 @@ from pathlib import Path
 from datasets import Dataset, Features, Image, Value
 from huggingface_hub import DatasetCard
 
-from imgproc.results import load_results
+from vlm_tools.results import load_results
 
 
 def build_dataset(results: list[dict]) -> Dataset:

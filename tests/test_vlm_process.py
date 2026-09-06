@@ -46,7 +46,7 @@ def mock_processor():
 
 
 def test_process_batch_returns_results(mock_model, mock_processor, tmp_images):
-    from imgproc.vlm_process import process_batch
+    from vlm_tools.vlm_process import process_batch
 
     output_file = tmp_images[0].parent / "output.jsonl"
     results = process_batch(
@@ -58,7 +58,7 @@ def test_process_batch_returns_results(mock_model, mock_processor, tmp_images):
 
 
 def test_process_batch_strips_whitespace(mock_model, mock_processor, tmp_images):
-    from imgproc.vlm_process import process_batch
+    from vlm_tools.vlm_process import process_batch
 
     mock_processor.batch_decode.return_value = ["  nature\n"]
     output_file = tmp_images[0].parent / "output.jsonl"
@@ -69,7 +69,7 @@ def test_process_batch_strips_whitespace(mock_model, mock_processor, tmp_images)
 
 
 def test_process_batch_relative_paths(mock_model, mock_processor, tmp_images):
-    from imgproc.vlm_process import process_batch
+    from vlm_tools.vlm_process import process_batch
 
     output_file = tmp_images[0].parent / "output.jsonl"
     results = process_batch(
@@ -81,7 +81,7 @@ def test_process_batch_relative_paths(mock_model, mock_processor, tmp_images):
 
 
 def test_process_batch_all_corrupted(mock_model, mock_processor, tmp_path):
-    from imgproc.vlm_process import process_batch
+    from vlm_tools.vlm_process import process_batch
 
     bad = tmp_path / "bad.png"
     bad.write_bytes(b"garbage")
@@ -97,12 +97,12 @@ def test_process_batch_all_corrupted(mock_model, mock_processor, tmp_path):
 # --- vlm_process resumption tests ---
 
 
-@patch("imgproc.vlm_process.load_model")
-@patch("imgproc.vlm_process.get_device", return_value="cpu")
-@patch("imgproc.vlm_process._run_inference", return_value=[])
-@patch("imgproc.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), []))
+@patch("vlm_tools.vlm_process.load_model")
+@patch("vlm_tools.vlm_process.get_device", return_value="cpu")
+@patch("vlm_tools.vlm_process._run_inference", return_value=[])
+@patch("vlm_tools.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), []))
 def test_vlm_process_resumes(mock_prep, mock_infer, mock_device, mock_load, tmp_images):
-    from imgproc.vlm_process import vlm_process
+    from vlm_tools.vlm_process import vlm_process
 
     mock_load.return_value = (MagicMock(device="cpu"), MagicMock())
 
@@ -120,10 +120,10 @@ def test_vlm_process_resumes(mock_prep, mock_infer, mock_device, mock_load, tmp_
     assert total_images == 3
 
 
-@patch("imgproc.vlm_process.load_model")
-@patch("imgproc.vlm_process.get_device", return_value="cpu")
+@patch("vlm_tools.vlm_process.load_model")
+@patch("vlm_tools.vlm_process.get_device", return_value="cpu")
 def test_vlm_process_skips_when_all_done(mock_device, mock_load, tmp_images):
-    from imgproc.vlm_process import vlm_process
+    from vlm_tools.vlm_process import vlm_process
 
     output = tmp_images[0].parent / "output.jsonl"
     with open(output, "w") as f:
@@ -136,12 +136,12 @@ def test_vlm_process_skips_when_all_done(mock_device, mock_load, tmp_images):
     mock_load.assert_not_called()
 
 
-@patch("imgproc.vlm_process.load_model")
-@patch("imgproc.vlm_process.get_device", return_value="cpu")
-@patch("imgproc.vlm_process._run_inference", return_value=[{"file_name": "x.png", "output": "y"}])
-@patch("imgproc.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), ["x.png"]))
+@patch("vlm_tools.vlm_process.load_model")
+@patch("vlm_tools.vlm_process.get_device", return_value="cpu")
+@patch("vlm_tools.vlm_process._run_inference", return_value=[{"file_name": "x.png", "output": "y"}])
+@patch("vlm_tools.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), ["x.png"]))
 def test_vlm_process_batching(mock_prep, mock_infer, mock_device, mock_load, tmp_images):
-    from imgproc.vlm_process import vlm_process
+    from vlm_tools.vlm_process import vlm_process
 
     mock_load.return_value = (MagicMock(device="cpu"), MagicMock())
 
@@ -153,12 +153,12 @@ def test_vlm_process_batching(mock_prep, mock_infer, mock_device, mock_load, tmp
     assert batch_sizes == [2, 2, 1]
 
 
-@patch("imgproc.vlm_process.load_model")
-@patch("imgproc.vlm_process.get_device", return_value="cpu")
-@patch("imgproc.vlm_process._run_inference", return_value=[{"file_name": "img.png", "output": "caption"}])
-@patch("imgproc.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), ["img.png"]))
+@patch("vlm_tools.vlm_process.load_model")
+@patch("vlm_tools.vlm_process.get_device", return_value="cpu")
+@patch("vlm_tools.vlm_process._run_inference", return_value=[{"file_name": "img.png", "output": "caption"}])
+@patch("vlm_tools.vlm_process.prepare_vlm_batch", return_value=(MagicMock(), ["img.png"]))
 def test_vlm_process_writes_jsonl(mock_prep, mock_infer, mock_device, mock_load, tmp_images):
-    from imgproc.vlm_process import vlm_process
+    from vlm_tools.vlm_process import vlm_process
 
     mock_load.return_value = (MagicMock(device="cpu"), MagicMock())
 

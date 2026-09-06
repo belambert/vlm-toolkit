@@ -1,6 +1,6 @@
 from PIL import Image
 
-from imgproc.img_utils import resize_image_if_needed
+from vlm_tools.img_utils import resize_image_if_needed
 
 
 def test_resize_image_if_needed_no_resize():
