@@ -2,12 +2,7 @@ from pathlib import Path
 
 import typer
 
-from vlm_tools.vlm_process import (
-    DEFAULT_MODEL,
-    DEFAULT_PROMPT,
-    SUGGESTED_MODELS,
-    vlm_process,
-)
+from vlm_tools.models import DEFAULT_MODEL, DEFAULT_PROMPT, SUGGESTED_MODELS
 
 app = typer.Typer()
 
@@ -30,6 +25,9 @@ def main(
     ),
 ) -> None:
     """Process images using a Vision Language Model."""
+    # deferred so `vlm --help` doesn't pay for the torch import
+    from vlm_tools.vlm_process import vlm_process
+
     if prompt_file is not None:
         prompt = prompt_file.read_text().strip()
 

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from vlm_tools.vlm_process import DEFAULT_MODEL, SUGGESTED_MODELS, vlm_process
+from vlm_tools.models import DEFAULT_MODEL, SUGGESTED_MODELS
 
 app = typer.Typer()
 
@@ -18,6 +18,9 @@ def main(
     batch_size: int = typer.Option(1, help="Number of images to process in parallel"),
 ) -> None:
     """Generate captions for all images in a folder using a VLM."""
+    # deferred so `vlm --help` doesn't pay for the torch import
+    from vlm_tools.vlm_process import vlm_process
+
     prompt = PROMPT_FILE.read_text()
 
     if output is None:

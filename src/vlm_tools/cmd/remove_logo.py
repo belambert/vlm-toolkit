@@ -3,13 +3,16 @@ import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 from PIL import Image
 from tqdm import tqdm
 
 from vlm_tools.bbox import parse_bboxes
-from vlm_tools.logo import GrayLogoRemover, LogoRemover, OpenCVLogoRemover
+
+if TYPE_CHECKING:
+    from vlm_tools.logo import LogoRemover
 
 app = typer.Typer()
 
@@ -25,8 +28,11 @@ def process_single_image(
     image_path: Path, bboxes: list, output_path: Path, method: RemovalMethod
 ) -> tuple[bool, str, Path | str]:
     """Process a single image (used for parallel processing)."""
+    # deferred so `vlm --help` works without the logo extra installed
+    from vlm_tools.logo import GrayLogoRemover, OpenCVLogoRemover
+
     try:
-        remover: LogoRemover
+        remover: "LogoRemover"
         if method == RemovalMethod.OPENCV:
             remover = OpenCVLogoRemover()
         else:

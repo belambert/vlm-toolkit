@@ -7,27 +7,11 @@ from tqdm import tqdm
 from transformers import BatchFeature, PreTrainedModel, ProcessorMixin
 
 from vlm_tools.img_utils import find_images
+from vlm_tools.models import DEFAULT_MODEL, DEFAULT_PROMPT, SUGGESTED_MODELS
 from vlm_tools.util import get_device
 from vlm_tools.vlm import load_model, prepare_vlm_batch
 
-DEFAULT_PROMPT = "Describe this image."
-DEFAULT_MODEL = "Qwen/Qwen3.5-2B"
-SUGGESTED_MODELS = """\
-Suggested models:
-- Qwen/Qwen3.5-0.8B
-- Qwen/Qwen3.5-2B
-- Qwen/Qwen3.5-4B
-- Qwen/Qwen3.5-9B
-- Qwen/Qwen3.5-27B
-- Qwen/Qwen3.5-27B-FP8
-- Qwen/Qwen3.5-35B-A3B
-- Qwen/Qwen3.5-35B-A3B-FP8
-- google/gemma-4-E2B-it
-- google/gemma-4-E4B-it
-- google/gemma-4-26B-A4B-it
-- google/gemma-4-31B-it
-- huihui-ai/Huihui-Qwen3.5-9B-abliterated
-"""
+__all__ = ["DEFAULT_MODEL", "DEFAULT_PROMPT", "SUGGESTED_MODELS", "vlm_process"]
 
 
 def vlm_process(

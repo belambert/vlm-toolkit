@@ -2,8 +2,6 @@ from pathlib import Path
 
 import typer
 
-from vlm_tools.hf_dataset import upload
-
 app = typer.Typer()
 
 
@@ -28,6 +26,9 @@ def main(
     self-contained and works in the Hub's dataset viewer. --card attaches a
     README, preserving the dataset_info metadata the upload generates.
     """
+    # deferred so `vlm --help` works without the hub extra installed
+    from vlm_tools.hf_dataset import upload
+
     if not results_file.exists():
         print(f"Error: {results_file} does not exist", flush=True)
         raise typer.Exit(1)

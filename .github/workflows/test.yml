@@ -35,3 +35,39 @@ jobs:
         with:
           files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  # the base install must stay usable with no extras, so the CLI can't eagerly
+  # import torch, opencv or datasets
+  base-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install without extras
+        run: pip install .
+
+      - name: Heavy dependencies must be absent
+        run: |
+          for mod in torch cv2 datasets; do
+            if python -c "import $mod" 2>/dev/null; then
+              echo "$mod pulled into the base install"
+              exit 1
+            fi
+          done
+
+      - name: The CLI and its light commands still work
+        run: |
+          vlm --help
+          vlm server --help
+          vlm view-output --help
+          vlm process --help
+
+      - name: A command needing an extra explains itself
+        run: |
+          vlm upload-dataset /nope.jsonl u/d 2>&1 | tee out.txt || true
+          grep -q "needs the 'hub' extra" out.txt

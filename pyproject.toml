@@ -23,18 +23,10 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "accelerate>=1.12.0",
-    "datasets>=3.2.0",
+    "click>=8.1.0",
     "httpx>=0.28.1",
-    "kernels>=0.12.3",
-    "numpy>=2.2.1",
-    "opencv-python>=4.10.0",
-    "outlines>=1.2.12",
     "pillow>=12.0.0",
-    "torch>=2.9.1",
-    "torchvision>=0.25.0",
     "tqdm>=4.67.1",
-    "transformers>=5.5.0",
     "typer>=0.21.0",
 ]
 
@@ -44,7 +36,27 @@ Repository = "https://github.com/belambert/vlm-tools"
 Issues = "https://github.com/belambert/vlm-tools/issues"
 
 [project.optional-dependencies]
+# local inference: `vlm process`, `vlm caption-images`, `vlm detect-logo`
+local = [
+    "accelerate>=1.12.0",
+    "kernels>=0.12.3",
+    "outlines>=1.2.12",
+    "torch>=2.9.1",
+    "torchvision>=0.25.0",
+    "transformers>=5.5.0",
+]
+# inpainting: `vlm remove-logo`
+logo = [
+    "numpy>=2.2.1",
+    "opencv-python>=4.10.0",
+]
+# Hugging Face Hub upload: `vlm upload-dataset`
+hub = [
+    "datasets>=3.2.0",
+]
+all = ["vlmtools[local,logo,hub]"]
 dev = [
+    "vlmtools[local,logo,hub]",
     "black>=24.10.0",
     "isort>=5.13.2",
     "mypy>=1.14.0",
@@ -70,13 +82,7 @@ url = "https://download.pytorch.org/whl/cu130"
 explicit = true
 
 [project.scripts]
-vlm-process = "vlm_tools.cmd.vlm_process:app"
-vlm-server = "vlm_tools.cmd.vlm_server:app"
-detect-logo = "vlm_tools.cmd.detect_logo:app"
-caption-images = "vlm_tools.cmd.caption_images:app"
-remove-logo = "vlm_tools.cmd.remove_logo:app"
-view-vlm-output = "vlm_tools.cmd.view_vlm_output:app"
-upload-dataset = "vlm_tools.cmd.upload_dataset:app"
+vlm = "vlm_tools.cmd.main:cli"
 
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]
@@ -85,15 +91,6 @@ build-backend = "uv_build"
 # the distribution is vlmtools, the import package stays vlm_tools
 [tool.uv.build-backend]
 module-name = "vlm_tools"
-
-[dependency-groups]
-dev = [
-    "black>=24.10.0",
-    "isort>=5.13.2",
-    "mypy>=1.14.0",
-    "pytest>=8.3.4",
-    "pytest-cov>=7.1.0",
-]
 
 [tool.black]
 line-length = 88

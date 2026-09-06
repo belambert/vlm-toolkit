@@ -9,51 +9,70 @@ watermark detection, and logo removal.
 
 ## Installation
 
-    uv sync
+    pip install vlmtools
 
-That installs everything the CLIs need, including the ML stack. Add test
-dependencies with:
+The base install is small: it covers `vlm server`, `vlm view-output`, and the
+shared plumbing. The heavier pieces are optional extras, so you only pay for
+what you use:
+
+| Extra   | Pulls in                      | Needed by                                  |
+| ------- | ----------------------------- | ------------------------------------------ |
+| `local` | torch, transformers, outlines | `process`, `caption-images`, `detect-logo` |
+| `logo`  | opencv, numpy                 | `remove-logo`                              |
+| `hub`   | datasets                      | `upload-dataset`                           |
+| `all`   | all of the above              | everything                                 |
+
+    pip install 'vlmtools[local]'
+    pip install 'vlmtools[all]'
+
+Running a command whose extra is missing tells you which one to install rather
+than raising an ImportError.
+
+For a source checkout:
 
     uv sync --extra dev
 
 ## Commands
 
-### vlm-process
+Everything is a subcommand of `vlm`; run `vlm --help` for the list. From a
+source checkout, prefix with `uv run`.
+
+### process
 
 Run a VLM over a folder of images locally.
 
-    uv run vlm-process <image-dir>
-    uv run vlm-process <image-dir> --batch-size 8 --max-dim 1024
-    uv run vlm-process <image-dir> --prompt "Describe this image in one sentence"
-    uv run vlm-process <image-dir> --prompt-file my_prompt.txt
-    uv run vlm-process <image-dir> --schema schema.json
+    vlm process <image-dir>
+    vlm process <image-dir> --batch-size 8 --max-dim 1024
+    vlm process <image-dir> --prompt "Describe this image in one sentence"
+    vlm process <image-dir> --prompt-file my_prompt.txt
+    vlm process <image-dir> --schema schema.json
 
 `--schema` takes a JSON schema file and constrains decoding to match it, via
 outlines. `--prompt-file` overrides `--prompt`. Output is JSONL, written to
 `--output`.
 
-### vlm-server
+### server
 
 Same idea, but against a running OpenAI-compatible vision endpoint instead of a
 local model.
 
-    uv run vlm-server <image-dir> --base-url http://localhost:8000/v1
-    uv run vlm-server <image-dir> --concurrency 8 --max-tokens 512
+    vlm server <image-dir> --base-url http://localhost:8000/v1
+    vlm server <image-dir> --concurrency 8 --max-tokens 512
 
 ### caption-images
 
-`vlm-process` preset that captions with `prompts/caption.txt`, writing
+`vlm process` preset that captions with `prompts/caption.txt`, writing
 `captions.json` into the image folder by default.
 
-    uv run caption-images <image-dir>
+    vlm caption-images <image-dir>
 
 ### detect-logo
 
-`vlm-process` preset that finds logos and watermarks using
+`vlm process` preset that finds logos and watermarks using
 `prompts/detect_logo.txt`, writing `logo_bbox_output.json` into the image folder
 by default.
 
-    uv run detect-logo <image-dir>
+    vlm detect-logo <image-dir>
 
 ### remove-logo
 
@@ -61,16 +80,16 @@ Erases the boxes found by `detect-logo`. Takes that command's JSON output, not
 an image folder. Two methods: `gray` replaces each box with a gray rectangle,
 `opencv` inpaints it (the default).
 
-    uv run remove-logo <image-dir>/logo_bbox_output.json <output-dir>
-    uv run remove-logo <image-dir>/logo_bbox_output.json <output-dir> --method gray
+    vlm remove-logo <image-dir>/logo_bbox_output.json <output-dir>
+    vlm remove-logo <image-dir>/logo_bbox_output.json <output-dir> --method gray
 
 ### upload-dataset
 
-Publishes a `vlm-process` run to the Hugging Face Hub as an image dataset.
+Publishes a `vlm process` run to the Hugging Face Hub as an image dataset.
 
-    uv run upload-dataset <output.jsonl> <user>/<dataset>
-    uv run upload-dataset <output.jsonl> <user>/<dataset> --no-private --split test
-    uv run upload-dataset <output.jsonl> <user>/<dataset> --card CARD.md
+    vlm upload-dataset <output.jsonl> <user>/<dataset>
+    vlm upload-dataset <output.jsonl> <user>/<dataset> --no-private --split test
+    vlm upload-dataset <output.jsonl> <user>/<dataset> --card CARD.md
 
 The images are embedded in the dataset rather than referenced by path, so the
 result is self-contained and the Hub's dataset viewer works. Columns are
@@ -88,13 +107,13 @@ in your file (`license`, `task_categories`, …) is layered on top of the
 generated keys. The card path is checked before the upload starts, so a typo
 fails immediately instead of after transferring the images.
 
-### view-vlm-output
+### view-output
 
 Renders a JSONL output file as an HTML page and opens it in a browser.
 
-    uv run view-vlm-output <output.jsonl>
-    uv run view-vlm-output <output.jsonl> --serve --port 8000
-    uv run view-vlm-output <output.jsonl> --serve --host 0.0.0.0
+    vlm view-output <output.jsonl>
+    vlm view-output <output.jsonl> --serve --port 8000
+    vlm view-output <output.jsonl> --serve --host 0.0.0.0
 
 By default it writes `<output.jsonl>.html` next to the input and opens it over
 `file://`, with absolute paths to the images. `--serve` skips the file and hosts
@@ -117,7 +136,7 @@ and forward the port over SSH instead:
 
 The presets read their prompts from `src/vlm_tools/prompts/`, which ships as
 package data, so they work from an installed wheel as well as a source checkout.
-To use your own prompt, pass `vlm-process --prompt-file <path>`.
+To use your own prompt, pass `vlm process --prompt-file <path>`.
 
 The viewer page is packaged the same way. Its markup and CSS live in
 `src/vlm_tools/templates/` as `viewer.html` (the shell, with an `$items`
@@ -161,7 +180,7 @@ applied to every row. That slice is only correct when the padding sits on the
 left — with right padding it would cut at the wrong point and leak pad and
 prompt tokens into the decoded text.
 
-**Batches are prefetched.** `vlm-process` prepares the next batch on the CPU in
+**Batches are prefetched.** `vlm process` prepares the next batch on the CPU in
 a background thread while the current one runs inference. Only the main thread
 moves tensors onto the device.
 
