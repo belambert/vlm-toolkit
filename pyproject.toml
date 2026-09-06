@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Multimedia :: Graphics",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
@@ -40,7 +41,8 @@ Issues = "https://github.com/belambert/vlm-toolkit/issues"
 local = [
     "accelerate>=1.12.0",
     "kernels>=0.12.3",
-    "outlines>=1.2.12",
+    # 0.2.6 is the first release without a transformers<5 pin; still an rc
+    "xgrammar>=0.2.6rc1",
     "torch>=2.9.1",
     "torchvision>=0.25.0",
     "transformers>=5.5.0",

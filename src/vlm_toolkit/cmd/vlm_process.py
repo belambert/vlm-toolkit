@@ -21,7 +21,7 @@ def main(
         None, help="Maximum dimension for image resizing (default: 1024)"
     ),
     schema: Path = typer.Option(
-        None, help="JSON schema file for constrained decoding (uses outlines)"
+        None, help="JSON schema file for constrained decoding (uses xgrammar)"
     ),
 ) -> None:
     """Process images using a Vision Language Model."""

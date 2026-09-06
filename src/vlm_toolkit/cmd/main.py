@@ -22,7 +22,7 @@ COMMANDS = {
 EXTRAS = {
     "accelerate": "local",
     "kernels": "local",
-    "outlines": "local",
+    "xgrammar": "local",
     "torch": "local",
     "torchvision": "local",
     "transformers": "local",

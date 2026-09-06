@@ -17,7 +17,7 @@ what you use:
 
 | Extra   | Pulls in                      | Needed by                                  |
 | ------- | ----------------------------- | ------------------------------------------ |
-| `local` | torch, transformers, outlines | `process`, `caption-images`, `detect-logo` |
+| `local` | torch, transformers, xgrammar | `process`, `caption-images`, `detect-logo` |
 | `logo`  | opencv, numpy                 | `remove-logo`                              |
 | `hub`   | datasets                      | `upload-dataset`                           |
 | `all`   | all of the above              | everything                                 |
@@ -48,7 +48,7 @@ Run a VLM over a folder of images locally.
     vlm process <image-dir> --schema schema.json
 
 `--schema` takes a JSON schema file and constrains decoding to match it, via
-outlines. `--prompt-file` overrides `--prompt`. Output is JSONL, written to
+xgrammar. `--prompt-file` overrides `--prompt`. Output is JSONL, written to
 `--output`.
 
 ### server

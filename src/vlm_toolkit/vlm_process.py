@@ -64,9 +64,9 @@ def vlm_process(
 
     vlm, processor = load_model(model, device)
 
-    logits_processor = None
+    grammar = None
     if schema is not None:
-        logits_processor = _build_json_logits_processor(schema, vlm, processor)
+        grammar = _compile_json_grammar(schema, processor)
         print("Constrained decoding enabled (JSON schema)", flush=True)
 
     # open output file in append mode to preserve existing results
@@ -104,7 +104,7 @@ def vlm_process(
             if inputs is not None:
                 inputs = inputs.to(device)
             batch_results = _run_inference(
-                vlm, processor, inputs, valid_paths, output, logits_processor
+                vlm, processor, inputs, valid_paths, output, grammar
             )
             for result in batch_results:
                 f.write(json.dumps(result) + "\n")
@@ -122,16 +122,12 @@ def vlm_process(
     return output
 
 
-def _build_json_logits_processor(
-    schema_str: str, model: PreTrainedModel, processor: ProcessorMixin
-) -> Any:
-    """Build an outlines logits processor for JSON schema constrained decoding."""
-    import outlines
-    from outlines.backends.outlines_core import OutlinesCoreBackend
+def _compile_json_grammar(schema_str: str, processor: ProcessorMixin) -> Any:
+    """Compile a JSON schema into an xgrammar grammar for constrained decoding."""
+    import xgrammar as xgr
 
-    outlines_model = outlines.from_transformers(model, processor)
-    backend = OutlinesCoreBackend(outlines_model)
-    return backend.get_json_schema_logits_processor(schema_str)
+    info = xgr.TokenizerInfo.from_huggingface(processor.tokenizer)
+    return xgr.GrammarCompiler(info).compile_json_schema(schema_str)
 
 
 def process_batch(
@@ -156,7 +152,7 @@ def _run_inference(
     inputs: BatchFeature | None,
     valid_paths: list[Path],
     output_file: Path,
-    lp: Any = None,
+    grammar: Any = None,
 ) -> list[dict]:
     """Run model inference on prepared inputs and format results."""
     if inputs is None:
@@ -165,11 +161,14 @@ def _run_inference(
     generate_kwargs = dict(
         max_new_tokens=512, pad_token_id=processor.tokenizer.eos_token_id
     )
-    if lp is not None:
+    if grammar is not None:
         from transformers import LogitsProcessorList
+        from xgrammar.contrib.hf import LogitsProcessor
 
-        lp.reset()
-        generate_kwargs["logits_processor"] = LogitsProcessorList([lp])
+        # a processor binds to one batch's matchers, so build a fresh one here
+        generate_kwargs["logits_processor"] = LogitsProcessorList(
+            [LogitsProcessor(grammar)]
+        )
 
     # generate() lives on GenerationMixin, typed only against a private protocol
     generated_ids = model.generate(  # type: ignore[operator]
