@@ -3,11 +3,11 @@ from pathlib import Path
 
 import typer
 
-from vlm_tools.models import DEFAULT_MODEL, SUGGESTED_MODELS
+from vlm_toolkit.models import DEFAULT_MODEL, SUGGESTED_MODELS
 
 app = typer.Typer()
 
-PROMPT_FILE = files("vlm_tools") / "prompts" / "detect_logo.txt"
+PROMPT_FILE = files("vlm_toolkit") / "prompts" / "detect_logo.txt"
 
 
 @app.command()
@@ -19,7 +19,7 @@ def main(
 ) -> None:
     """Detect logos with a VLM."""
     # deferred so `vlm --help` doesn't pay for the torch import
-    from vlm_tools.vlm_process import vlm_process
+    from vlm_toolkit.vlm_process import vlm_process
 
     prompt = PROMPT_FILE.read_text()
 

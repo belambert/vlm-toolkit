@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from vlm_tools.vlm_server import (
+from vlm_toolkit.vlm_server import (
     DEFAULT_BASE_URL,
     DEFAULT_MODEL,
     DEFAULT_PROMPT,

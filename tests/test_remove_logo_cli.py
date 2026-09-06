@@ -9,7 +9,7 @@ import pytest
 from PIL import Image
 from typer.testing import CliRunner
 
-from vlm_tools.cmd.remove_logo import app
+from vlm_toolkit.cmd.remove_logo import app
 
 runner = CliRunner()
 

@@ -11,7 +11,7 @@ from transformers import (
     ProcessorMixin,
 )
 
-from vlm_tools.img_utils import resize_image_if_needed
+from vlm_toolkit.img_utils import resize_image_if_needed
 
 
 def _load_image(path: Path, max_dim: int | None) -> Image.Image | None:

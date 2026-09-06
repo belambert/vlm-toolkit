@@ -5,8 +5,8 @@ import pytest
 from huggingface_hub import DatasetCard
 from PIL import Image
 
-from vlm_tools.hf_dataset import build_dataset, push_card, upload
-from vlm_tools.results import load_results
+from vlm_toolkit.hf_dataset import build_dataset, push_card, upload
+from vlm_toolkit.results import load_results
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ def test_build_dataset_strips_legacy_whitespace(tmp_path):
 
 
 def test_upload_embeds_images(run_dir):
-    with patch("vlm_tools.hf_dataset.Dataset.push_to_hub") as push:
+    with patch("vlm_toolkit.hf_dataset.Dataset.push_to_hub") as push:
         url = upload(run_dir, "user/ds", private=True)
 
     assert url == "https://huggingface.co/datasets/user/ds"
@@ -60,7 +60,7 @@ def test_upload_embeds_images(run_dir):
 def test_upload_skips_missing_images(run_dir, capsys):
     (run_dir.parent.parent / "imgs" / "a.jpg").unlink()
 
-    with patch("vlm_tools.hf_dataset.Dataset.push_to_hub"):
+    with patch("vlm_toolkit.hf_dataset.Dataset.push_to_hub"):
         upload(run_dir, "user/ds")
 
     assert "Skipping missing image" in capsys.readouterr().out
@@ -70,8 +70,8 @@ def test_upload_attaches_card_when_given(run_dir, tmp_path):
     card = tmp_path / "CARD.md"
     card.write_text("# Plants\n\nA test dataset.\n")
 
-    with patch("vlm_tools.hf_dataset.Dataset.push_to_hub"):
-        with patch("vlm_tools.hf_dataset.push_card") as push_card:
+    with patch("vlm_toolkit.hf_dataset.Dataset.push_to_hub"):
+        with patch("vlm_toolkit.hf_dataset.push_card") as push_card:
             upload(run_dir, "user/ds", card_file=card)
 
     push_card.assert_called_once()
@@ -79,8 +79,8 @@ def test_upload_attaches_card_when_given(run_dir, tmp_path):
 
 
 def test_upload_skips_card_by_default(run_dir):
-    with patch("vlm_tools.hf_dataset.Dataset.push_to_hub"):
-        with patch("vlm_tools.hf_dataset.push_card") as push_card:
+    with patch("vlm_toolkit.hf_dataset.Dataset.push_to_hub"):
+        with patch("vlm_toolkit.hf_dataset.push_card") as push_card:
             upload(run_dir, "user/ds")
 
     push_card.assert_not_called()
@@ -91,7 +91,7 @@ def test_push_card_preserves_generated_metadata(tmp_path):
     card_file.write_text("# Title\n\nBody text.\n")
 
     existing = DatasetCard("---\ndataset_info:\n  splits: []\n---\n")
-    with patch("vlm_tools.hf_dataset.DatasetCard.load", return_value=existing):
+    with patch("vlm_toolkit.hf_dataset.DatasetCard.load", return_value=existing):
         with patch.object(DatasetCard, "push_to_hub") as push:
             push_card("user/ds", card_file)
 
@@ -106,7 +106,7 @@ def test_push_card_merges_frontmatter(tmp_path):
     card_file.write_text("---\nlicense: mit\n---\n\nBody.\n")
 
     existing = DatasetCard("---\ndataset_info:\n  splits: []\n---\n")
-    with patch("vlm_tools.hf_dataset.DatasetCard.load", return_value=existing):
+    with patch("vlm_toolkit.hf_dataset.DatasetCard.load", return_value=existing):
         with patch.object(DatasetCard, "push_to_hub"):
             push_card("user/ds", card_file)
 

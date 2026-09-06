@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PIL import Image
 
-from vlm_tools.vlm import prepare_vlm_batch
+from vlm_toolkit.vlm import prepare_vlm_batch
 
 
 @pytest.fixture
@@ -28,9 +28,7 @@ def tmp_images(tmp_path):
 
 
 def test_prepare_vlm_batch_loads_all_images(processor, tmp_images):
-    inputs, valid_paths = prepare_vlm_batch(
-        processor, tmp_images, "describe", "cpu"
-    )
+    inputs, valid_paths = prepare_vlm_batch(processor, tmp_images, "describe", "cpu")
     assert len(valid_paths) == 3
     assert valid_paths == tmp_images
     assert processor.apply_chat_template.call_count == 3
@@ -41,9 +39,7 @@ def test_prepare_vlm_batch_skips_corrupted(processor, tmp_images):
     # write garbage to the second image
     tmp_images[1].write_bytes(b"not an image")
 
-    inputs, valid_paths = prepare_vlm_batch(
-        processor, tmp_images, "describe", "cpu"
-    )
+    inputs, valid_paths = prepare_vlm_batch(processor, tmp_images, "describe", "cpu")
     assert len(valid_paths) == 2
     assert tmp_images[1] not in valid_paths
 
@@ -52,9 +48,7 @@ def test_prepare_vlm_batch_all_corrupted(processor, tmp_path):
     bad = tmp_path / "bad.png"
     bad.write_bytes(b"garbage")
 
-    inputs, valid_paths = prepare_vlm_batch(
-        processor, [bad], "describe", "cpu"
-    )
+    inputs, valid_paths = prepare_vlm_batch(processor, [bad], "describe", "cpu")
     assert inputs is None
     assert valid_paths == []
 
@@ -75,7 +69,5 @@ def test_prepare_vlm_batch_respects_max_dim(processor, tmp_path):
 
 
 def test_prepare_vlm_batch_moves_to_device(processor, tmp_images):
-    inputs, _ = prepare_vlm_batch(
-        processor, tmp_images[:1], "describe", "cpu"
-    )
+    inputs, _ = prepare_vlm_batch(processor, tmp_images[:1], "describe", "cpu")
     processor.return_value.to.assert_called_once_with("cpu")

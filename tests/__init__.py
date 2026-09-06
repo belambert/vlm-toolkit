@@ -1,1 +1,1 @@
-# Tests for vlm_tools
+# Tests for vlm_toolkit

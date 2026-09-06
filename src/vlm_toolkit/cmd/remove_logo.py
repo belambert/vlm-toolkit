@@ -9,10 +9,10 @@ import typer
 from PIL import Image
 from tqdm import tqdm
 
-from vlm_tools.bbox import parse_bboxes
+from vlm_toolkit.bbox import parse_bboxes
 
 if TYPE_CHECKING:
-    from vlm_tools.logo import LogoRemover
+    from vlm_toolkit.logo import LogoRemover
 
 app = typer.Typer()
 
@@ -29,7 +29,7 @@ def process_single_image(
 ) -> tuple[bool, str, Path | str]:
     """Process a single image (used for parallel processing)."""
     # deferred so `vlm --help` works without the logo extra installed
-    from vlm_tools.logo import GrayLogoRemover, OpenCVLogoRemover
+    from vlm_toolkit.logo import GrayLogoRemover, OpenCVLogoRemover
 
     try:
         remover: "LogoRemover"

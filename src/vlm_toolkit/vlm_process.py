@@ -6,10 +6,10 @@ from typing import Any
 from tqdm import tqdm
 from transformers import BatchFeature, PreTrainedModel, ProcessorMixin
 
-from vlm_tools.img_utils import find_images
-from vlm_tools.models import DEFAULT_MODEL, DEFAULT_PROMPT, SUGGESTED_MODELS
-from vlm_tools.util import get_device
-from vlm_tools.vlm import load_model, prepare_vlm_batch
+from vlm_toolkit.img_utils import find_images
+from vlm_toolkit.models import DEFAULT_MODEL, DEFAULT_PROMPT, SUGGESTED_MODELS
+from vlm_toolkit.util import get_device
+from vlm_toolkit.vlm import load_model, prepare_vlm_batch
 
 __all__ = ["DEFAULT_MODEL", "DEFAULT_PROMPT", "SUGGESTED_MODELS", "vlm_process"]
 

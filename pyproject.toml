@@ -82,15 +82,11 @@ url = "https://download.pytorch.org/whl/cu130"
 explicit = true
 
 [project.scripts]
-vlm = "vlm_tools.cmd.main:cli"
+vlm = "vlm_toolkit.cmd.main:cli"
 
 [build-system]
 requires = ["uv_build>=0.9.3,<0.10.0"]
 build-backend = "uv_build"
-
-# the distribution is vlm-toolkit, the import package stays vlm_tools
-[tool.uv.build-backend]
-module-name = "vlm_tools"
 
 [tool.black]
 line-length = 88

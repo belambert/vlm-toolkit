@@ -6,7 +6,7 @@ from typing import cast
 import click
 import typer
 
-# name -> (module under vlm_tools.cmd, one-line help shown by `vlm --help`)
+# name -> (module under vlm_toolkit.cmd, one-line help shown by `vlm --help`)
 COMMANDS = {
     "process": ("vlm_process", "Run a VLM over a folder of images locally"),
     "server": ("vlm_server", "Run a folder through an OpenAI-compatible endpoint"),
@@ -45,7 +45,7 @@ class LazyGroup(click.Group):
     def get_command(self, ctx: click.Context, name: str) -> click.Command | None:
         if name not in COMMANDS:
             return None
-        module = importlib.import_module(f"vlm_tools.cmd.{COMMANDS[name][0]}")
+        module = importlib.import_module(f"vlm_toolkit.cmd.{COMMANDS[name][0]}")
         command = typer.main.get_command(module.app)
         command.short_help = COMMANDS[name][1]
         # typer vendors its own click, so its commands aren't click.Command
