@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from datasets import Dataset, Features, Image, Value
+from huggingface_hub import DatasetCard
 
 from imgproc.results import load_results
 
@@ -21,12 +22,26 @@ def build_dataset(results: list[dict]) -> Dataset:
     return Dataset.from_dict(rows, features=features)
 
 
+def push_card(repo_id: str, card_file: Path, token: str | None = None) -> None:
+    """Attach a dataset card, keeping the dataset_info push_to_hub generated."""
+    card = DatasetCard.load(repo_id, token=token)
+    incoming = DatasetCard(card_file.read_text())
+
+    # a card file may carry its own frontmatter; layer it over the generated keys
+    for key, value in incoming.data.to_dict().items():
+        setattr(card.data, key, value)
+    card.text = incoming.text
+
+    card.push_to_hub(repo_id, token=token)
+
+
 def upload(
     results_file: Path,
     repo_id: str,
     private: bool = True,
     split: str = "train",
     token: str | None = None,
+    card_file: Path | None = None,
 ) -> str:
     """Upload a vlm-process JSONL run to repo_id, returning the dataset URL."""
     results = load_results(results_file)
@@ -54,4 +69,9 @@ def upload(
         token=token,
         embed_external_files=True,
     )
+
+    if card_file is not None:
+        push_card(repo_id, card_file, token=token)
+        print(f"Attached dataset card from {card_file}", flush=True)
+
     return f"https://huggingface.co/datasets/{repo_id}"

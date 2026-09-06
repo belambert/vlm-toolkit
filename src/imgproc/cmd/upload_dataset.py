@@ -18,17 +18,33 @@ def main(
     token: str = typer.Option(
         None, help="Hugging Face token (defaults to HF_TOKEN or a cached login)"
     ),
+    card: Path = typer.Option(
+        None, help="Markdown file to attach as the dataset card (README.md)"
+    ),
 ) -> None:
     """Upload a vlm-process run to the Hugging Face Hub as an image dataset.
 
     Images are embedded in the dataset, not referenced by path, so the result is
-    self-contained and works in the Hub's dataset viewer.
+    self-contained and works in the Hub's dataset viewer. --card attaches a
+    README, preserving the dataset_info metadata the upload generates.
     """
     if not results_file.exists():
         print(f"Error: {results_file} does not exist", flush=True)
         raise typer.Exit(1)
 
-    url = upload(results_file, repo_id, private=private, split=split, token=token)
+    # check before uploading, so a typo doesn't surface after a long transfer
+    if card is not None and not card.exists():
+        print(f"Error: {card} does not exist", flush=True)
+        raise typer.Exit(1)
+
+    url = upload(
+        results_file,
+        repo_id,
+        private=private,
+        split=split,
+        token=token,
+        card_file=card,
+    )
     print(f"Uploaded to {url}", flush=True)
 
 

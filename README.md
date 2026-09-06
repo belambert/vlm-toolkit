@@ -70,6 +70,7 @@ Publishes a `vlm-process` run to the Hugging Face Hub as an image dataset.
 
     uv run upload-dataset <output.jsonl> <user>/<dataset>
     uv run upload-dataset <output.jsonl> <user>/<dataset> --no-private --split test
+    uv run upload-dataset <output.jsonl> <user>/<dataset> --card CARD.md
 
 The images are embedded in the dataset rather than referenced by path, so the
 result is self-contained and the Hub's dataset viewer works. Columns are
@@ -79,6 +80,13 @@ from disk are reported and skipped.
 Repos are created private by default; pass `--no-private` for a public one.
 Authentication comes from `--token`, else `HF_TOKEN`, else a cached
 `huggingface-cli login`.
+
+`--card` attaches a markdown file as the dataset's README. The upload generates
+a `dataset_info` block that the Hub viewer depends on, so the card is merged
+rather than overwritten: your prose becomes the body, and any YAML frontmatter
+in your file (`license`, `task_categories`, …) is layered on top of the
+generated keys. The card path is checked before the upload starts, so a typo
+fails immediately instead of after transferring the images.
 
 ### view-vlm-output
 
