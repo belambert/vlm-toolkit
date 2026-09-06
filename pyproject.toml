@@ -1,5 +1,5 @@
 [project]
-name = "vlmtools"
+name = "vlm-toolkit"
 version = "0.1.0"
 description = "Batch image processing with vision language models: captioning, logo and watermark detection, and logo removal"
 readme = "README.md"
@@ -54,9 +54,9 @@ logo = [
 hub = [
     "datasets>=3.2.0",
 ]
-all = ["vlmtools[local,logo,hub]"]
+all = ["vlm-toolkit[local,logo,hub]"]
 dev = [
-    "vlmtools[local,logo,hub]",
+    "vlm-toolkit[local,logo,hub]",
     "black>=24.10.0",
     "isort>=5.13.2",
     "mypy>=1.14.0",
@@ -88,7 +88,7 @@ vlm = "vlm_tools.cmd.main:cli"
 requires = ["uv_build>=0.9.3,<0.10.0"]
 build-backend = "uv_build"
 
-# the distribution is vlmtools, the import package stays vlm_tools
+# the distribution is vlm-toolkit, the import package stays vlm_tools
 [tool.uv.build-backend]
 module-name = "vlm_tools"
 

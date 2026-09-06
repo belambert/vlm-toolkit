@@ -68,7 +68,7 @@ class LazyGroup(click.Group):
                 raise
             raise click.ClickException(
                 f"`vlm {ctx.invoked_subcommand}` needs the '{extra}' extra.\n"
-                f"Install it with: pip install 'vlmtools[{extra}]'"
+                f"Install it with: pip install 'vlm-toolkit[{extra}]'"
             ) from e
 
     def format_commands(self, ctx: click.Context, formatter) -> None:  # type: ignore[no-untyped-def]
@@ -78,7 +78,7 @@ class LazyGroup(click.Group):
 
 
 @click.group(cls=LazyGroup, context_settings={"help_option_names": ["-h", "--help"]})
-@click.version_option(package_name="vlmtools")
+@click.version_option(package_name="vlm-toolkit")
 def cli() -> None:
     """Batch image processing with vision language models."""
 

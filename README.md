@@ -9,7 +9,7 @@ watermark detection, and logo removal.
 
 ## Installation
 
-    pip install vlmtools
+    pip install vlm-toolkit
 
 The base install is small: it covers `vlm server`, `vlm view-output`, and the
 shared plumbing. The heavier pieces are optional extras, so you only pay for
@@ -22,8 +22,8 @@ what you use:
 | `hub`   | datasets                      | `upload-dataset`                           |
 | `all`   | all of the above              | everything                                 |
 
-    pip install 'vlmtools[local]'
-    pip install 'vlmtools[all]'
+    pip install 'vlm-toolkit[local]'
+    pip install 'vlm-toolkit[all]'
 
 Running a command whose extra is missing tells you which one to install rather
 than raising an ImportError.
