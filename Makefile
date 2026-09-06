@@ -1,4 +1,4 @@
-.PHONY: check format test install
+.PHONY: check format test install build
 
 check:
 	@echo "Running style checks..."
@@ -18,3 +18,7 @@ test:
 install:
 	@echo "Installing dependencies..."
 	uv sync --extra dev
+
+build:
+	@echo "Building distributions..."
+	uv build

@@ -198,6 +198,15 @@ applies its own preprocessing.
 
 Detect logo took 1 hour to do 5000 imgs on an L4 GPU at ~$1/hour.
 
+## Releasing
+
+Bump `version` in `pyproject.toml`, then push a matching tag:
+
+    git tag v0.1.0 && git push origin v0.1.0
+
+`publish.yml` checks the tag against the project version, builds, and publishes
+to PyPI via trusted publishing.
+
 ## License
 
 MIT - see [LICENSE](LICENSE).
