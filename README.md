@@ -70,16 +70,24 @@ Renders a JSONL output file as an HTML page and opens it in a browser.
 
     uv run view-vlm-output <output.jsonl>
     uv run view-vlm-output <output.jsonl> --serve --port 8000
+    uv run view-vlm-output <output.jsonl> --serve --host 0.0.0.0
 
 By default it writes `<output.jsonl>.html` next to the input and opens it over
 `file://`, with absolute paths to the images. `--serve` skips the file and hosts
 the page instead, which is what you want when the images sit on a remote
-machine — forward the port and view it locally.
+machine.
 
 The server roots itself at the closest directory containing both the JSONL and
 every image it references, so `file_name` entries that point outside the JSON's
-own directory still resolve. It binds to `127.0.0.1` only, since it serves that
-whole directory tree.
+own directory still resolve.
+
+`--host` controls the bind address. It defaults to `127.0.0.1`, so only the
+local machine can connect; `--host 0.0.0.0` accepts external connections and
+prints the LAN URL to open from another machine. There is no authentication and
+the whole server root is readable, so on an untrusted network prefer the default
+and forward the port over SSH instead:
+
+    ssh -L 8000:localhost:8000 <remote>
 
 ## Prompts
 

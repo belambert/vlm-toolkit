@@ -4,6 +4,7 @@ import functools
 import http.server
 import json
 import os
+import socket
 import socketserver
 import webbrowser
 from pathlib import Path
@@ -141,7 +142,17 @@ def _web_root(items: list[dict], json_dir: Path) -> tuple[Path, list[str]]:
     return root, [quote(str(p.relative_to(root))) for p in paths]
 
 
-def _serve(items: list[dict], input_json: Path, port: int) -> None:
+def _lan_ip() -> str:
+    """Best guess at this machine's outward-facing address, for the printed URL."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        try:
+            s.connect(("8.8.8.8", 80))  # no packets sent, just picks the route
+            return s.getsockname()[0]
+        except OSError:
+            return socket.gethostname()
+
+
+def _serve(items: list[dict], input_json: Path, host: str, port: int) -> None:
     """Serve the viewer, rooted at the common ancestor of the JSON and its images."""
     root, srcs = _web_root(items, input_json.parent)
 
@@ -149,10 +160,14 @@ def _serve(items: list[dict], input_json: Path, port: int) -> None:
     handler = functools.partial(_ViewerHandler, directory=str(root))
 
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("127.0.0.1", port), handler) as httpd:
-        url = f"http://127.0.0.1:{port}"
-        print(f"Serving {root} at {url} (Ctrl-C to stop)", flush=True)
-        webbrowser.open(url)
+    with socketserver.TCPServer((host, port), handler) as httpd:
+        local = f"http://{'127.0.0.1' if host in ('0.0.0.0', '') else host}:{port}"
+        print(f"Serving {root} (Ctrl-C to stop)", flush=True)
+        print(f"  local:   {local}", flush=True)
+        if host in ("0.0.0.0", ""):
+            print(f"  network: http://{_lan_ip()}:{port}", flush=True)
+            print("  reachable by anyone who can route to this host", flush=True)
+        webbrowser.open(local)
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
@@ -165,13 +180,17 @@ def main(
     serve: bool = typer.Option(
         False, "--serve", help="Serve over HTTP instead of writing an HTML file"
     ),
+    host: str = typer.Option(
+        "127.0.0.1", help="Address to bind; use 0.0.0.0 to accept external connections"
+    ),
     port: int = typer.Option(8000, help="Port to serve on"),
 ) -> None:
     """Generate HTML visualization of VLM output.
 
     Writes an HTML file next to the input and opens it, or with --serve hosts it
     on localhost instead, which is what you want when the images live on a
-    remote machine.
+    remote machine. --host 0.0.0.0 accepts external connections, which serves the
+    image directory to the network with no authentication.
     """
     if not input_json.exists():
         print(f"Error: {input_json} does not exist", flush=True)
@@ -180,7 +199,7 @@ def main(
     items = _load_items(input_json)
 
     if serve:
-        _serve(items, input_json, port)
+        _serve(items, input_json, host, port)
         return
 
     html = _render(items, [str(item["abs_path"]) for item in items])
