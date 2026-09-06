@@ -7,7 +7,10 @@ import os
 import socket
 import socketserver
 import webbrowser
+from html import escape
+from importlib.resources import files
 from pathlib import Path
+from string import Template
 from typing import Any
 from urllib.parse import quote
 
@@ -50,89 +53,20 @@ def _load_items(input_json: Path) -> list[dict]:
 
 def _render(items: list[dict], srcs: list[str]) -> str:
     """Render the viewer page, using srcs as the img src for each item."""
-    html = """<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>VLM Output Viewer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .item {
-            background: white;
-            margin-bottom: 20px;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        .image {
-            flex-shrink: 0;
-            position: relative;
-        }
-        .image img {
-            max-width: 400px;
-            max-height: 400px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .image a {
-            display: block;
-        }
-        .filename {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            font-size: 11px;
-            color: #ddd;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 2px 4px;
-            border-radius: 0 0 4px 4px;
-        }
-        .output {
-            flex-grow: 1;
-            font-size: 16px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-        }
-        h1 {
-            color: #333;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>VLM Output Viewer</h1>
-"""
+    templates = files("imgproc") / "templates"
+    page = Template((templates / "viewer.html").read_text())
+    item_template = Template((templates / "item.html").read_text())
 
-    for item, src in zip(items, srcs):
-        name = item["abs_path"].name
-        html += f"""        <div class="item">
-            <div class="image">
-                <a href="{src}" target="_blank">
-                    <img src="{src}" alt="{name}">
-                </a>
-                <div class="filename">{name}</div>
-            </div>
-            <div class="output">{item["output"]}</div>
-        </div>
-"""
-
-    html += """    </div>
-</body>
-</html>
-"""
-    return html
+    # model output is untrusted text, so escape everything going into the markup
+    blocks = [
+        item_template.substitute(
+            src=escape(src, quote=True),
+            name=escape(item["abs_path"].name),
+            output=escape(item["output"]),
+        )
+        for item, src in zip(items, srcs)
+    ]
+    return page.substitute(items="".join(blocks))
 
 
 def _web_root(items: list[dict], json_dir: Path) -> tuple[Path, list[str]]:

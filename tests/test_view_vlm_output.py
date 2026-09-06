@@ -58,3 +58,10 @@ def test_render_uses_given_srcs(outputs):
     assert '<img src="imgs/a.jpg"' in html
     assert "cap a" in html
     assert "cap b" in html
+
+
+def test_render_escapes_model_output(tmp_path):
+    items = [{"abs_path": tmp_path / "a.jpg", "output": "<script>alert(1)</script>"}]
+    html = _render(items, ["a.jpg"])
+    assert "<script>" not in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html

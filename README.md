@@ -95,6 +95,11 @@ The presets read their prompts from `src/imgproc/prompts/`, which ships as
 package data, so they work from an installed wheel as well as a source checkout.
 To use your own prompt, pass `vlm-process --prompt-file <path>`.
 
+The viewer page is packaged the same way. Its markup and CSS live in
+`src/imgproc/templates/` as `viewer.html` (the shell, with an `$items`
+placeholder) and `item.html` (one image plus its output), so restyling the
+viewer means editing HTML rather than a Python string.
+
 ## How Batching Works
 
 `--batch-size` sets how many images go through the model at once. Images are
