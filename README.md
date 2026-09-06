@@ -1,8 +1,8 @@
-# vlm-tools
+# vlm-toolkit
 
-[![Lint](https://github.com/belambert/vlm-tools/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/belambert/vlm-tools/actions/workflows/lint.yml)
-[![Test](https://github.com/belambert/vlm-tools/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/belambert/vlm-tools/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/belambert/vlm-tools/graph/badge.svg)](https://codecov.io/gh/belambert/vlm-tools)
+[![Lint](https://github.com/belambert/vlm-toolkit/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/belambert/vlm-toolkit/actions/workflows/lint.yml)
+[![Test](https://github.com/belambert/vlm-toolkit/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/belambert/vlm-toolkit/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/belambert/vlm-toolkit/graph/badge.svg)](https://codecov.io/gh/belambert/vlm-toolkit)
 
 Batch image processing with vision language models: captioning, logo and
 watermark detection, and logo removal.
