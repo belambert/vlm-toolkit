@@ -64,6 +64,22 @@ an image folder. Two methods: `gray` replaces each box with a gray rectangle,
     uv run remove-logo <image-dir>/logo_bbox_output.json <output-dir>
     uv run remove-logo <image-dir>/logo_bbox_output.json <output-dir> --method gray
 
+### upload-dataset
+
+Publishes a `vlm-process` run to the Hugging Face Hub as an image dataset.
+
+    uv run upload-dataset <output.jsonl> <user>/<dataset>
+    uv run upload-dataset <output.jsonl> <user>/<dataset> --no-private --split test
+
+The images are embedded in the dataset rather than referenced by path, so the
+result is self-contained and the Hub's dataset viewer works. Columns are
+`image`, `output`, and the original `file_name`. Rows whose image is missing
+from disk are reported and skipped.
+
+Repos are created private by default; pass `--no-private` for a public one.
+Authentication comes from `--token`, else `HF_TOKEN`, else a cached
+`huggingface-cli login`.
+
 ### view-vlm-output
 
 Renders a JSONL output file as an HTML page and opens it in a browser.

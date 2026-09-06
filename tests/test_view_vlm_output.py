@@ -3,7 +3,8 @@ import json
 import pytest
 from PIL import Image
 
-from imgproc.cmd.view_vlm_output import _load_items, _render, _web_root
+from imgproc.cmd.view_vlm_output import _render, _web_root
+from imgproc.results import load_results
 
 
 @pytest.fixture
@@ -25,14 +26,14 @@ def outputs(tmp_path):
 
 
 def test_load_items_resolves_relative_paths(outputs):
-    items = _load_items(outputs)
+    items = load_results(outputs)
     assert len(items) == 2
     assert items[0]["abs_path"].is_file()
     assert items[0]["abs_path"].name == "a.jpg"
 
 
 def test_web_root_covers_images_outside_json_dir(outputs):
-    items = _load_items(outputs)
+    items = load_results(outputs)
     root, srcs = _web_root(items, outputs.parent)
 
     # root must contain every image, so it cannot be the json dir itself
@@ -53,7 +54,7 @@ def test_web_root_quotes_urls(tmp_path):
 
 
 def test_render_uses_given_srcs(outputs):
-    items = _load_items(outputs)
+    items = load_results(outputs)
     html = _render(items, ["imgs/a.jpg", "imgs/b.jpg"])
     assert '<img src="imgs/a.jpg"' in html
     assert "cap a" in html

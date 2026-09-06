@@ -2,7 +2,6 @@
 
 import functools
 import http.server
-import json
 import os
 import socket
 import socketserver
@@ -15,6 +14,8 @@ from typing import Any
 from urllib.parse import quote
 
 import typer
+
+from imgproc.results import load_results
 
 app = typer.Typer()
 
@@ -36,19 +37,6 @@ class _ViewerHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, fmt: str, *args: Any) -> None:
         pass
-
-
-def _load_items(input_json: Path) -> list[dict]:
-    """Read a JSONL output file, resolving each file_name against its directory."""
-    json_dir = input_json.parent
-    items = []
-    with open(input_json) as f:
-        for line in f:
-            if line.strip():
-                item = json.loads(line)
-                item["abs_path"] = (json_dir / Path(item["file_name"])).resolve()
-                items.append(item)
-    return items
 
 
 def _render(items: list[dict], srcs: list[str]) -> str:
@@ -130,7 +118,7 @@ def main(
         print(f"Error: {input_json} does not exist", flush=True)
         raise typer.Exit(1)
 
-    items = _load_items(input_json)
+    items = load_results(input_json)
 
     if serve:
         _serve(items, input_json, host, port)
